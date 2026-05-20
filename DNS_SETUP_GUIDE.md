@@ -1,182 +1,126 @@
-# DNS Setup Guide for amazebid.co (Squarespace)
+# Hướng Dẫn Chi Tiết Cấu Hình Kết Nối Tên Miền (amazebid.co) Cho Hệ Thống AmazeBid
 
-## Overview
-This guide explains how to configure DNS records for the hybrid deployment architecture of AmazeBid using Squarespace domain management.
+Tài liệu này hướng dẫn chi tiết từng bước để cấu hình phân giải tên miền **amazebid.co** (đã mua tại Squarespace) trỏ về máy chủ VPS của bạn, thiết lập SSL (HTTPS) bảo mật và cấu hình môi trường giúp hệ thống hoạt động trơn tru từ Frontend đến Backend.
 
-## Architecture
+---
 
-### Option 1: Zero-Cost (Recommended)
-- **Frontend**: Vercel (amazebid.co, www.amazebid.co)
-- **Backend API**: Render.com (amazebid-api.onrender.com)
-
-### Option 2: Traditional (Paid)
-- **Frontend**: Vercel (amazebid.co, www.amazebid.co)
-- **Backend API**: VPS (api.amazebid.co)
-
-This guide covers both options. See `ZERO_COST_DEPLOYMENT_GUIDE.md` for detailed zero-cost setup.
-
-## Step 1: Access Squarespace DNS Settings
-
-1. Log in to your Squarespace account
-2. Go to **Settings** > **Domains**
-3. Select your domain `amazebid.co`
-4. Click on **DNS Settings**
-
-## Step 2: Remove Existing Records
-
-Before adding new records, remove the existing Squarespace default records:
-
-**Remove these records:**
-- All A records pointing to Squarespace IPs (198.185.159.145, 198.185.159.144, 198.49.23.144, 198.49.23.145)
-- CNAME record for `www` pointing to `ext-sq.squarespace.com`
-- HTTPS record
-- Domain Connect CNAME record
-
-**Keep these records (if needed for email):**
-- TXT records for DKIM, DMARC, SPF (if you use email services)
-
-## Step 3: Add Frontend DNS Records (Vercel)
-
-### After Deploying to Vercel
-
-1. Deploy your frontend to Vercel first
-2. Add custom domain in Vercel: `amazebid.co` and `www.amazebid.co`
-3. Vercel will provide you with DNS records to verify
-
-**Add these records in Squarespace:**
+## Sơ Đồ Hoạt Động Của Hệ Thống
 
 ```
-Type: CNAME
-Name: @
-Data: cname.vercel.app
-TTL: 4 hrs
-
-Type: CNAME
-Name: www
-Data: cname.vercel.app
-TTL: 4 hrs
+[Trình duyệt Người dùng] 
+       │
+       ├─► Truy cập https://amazebid.co ──► [Vercel hoặc VPS Frontend (Chứa Client App)]
+       │
+       └─► Gọi API https://api.amazebid.co ─► [Nginx Proxy (Cổng 443)] ─► [Node.js / Express (Cổng 3000 VPS)]
 ```
 
-**Note:** Replace `cname.vercel.app` with the specific CNAME Vercel provides after you add your custom domain.
+---
 
-## Step 4: Add Backend DNS Records
+## Bước 1: Cấu Hình Bản Ghi DNS trên Squarespace Managed Domains
 
-### Option A: Zero-Cost (Render.com) - No DNS Changes Needed
+Bạn cần đăng nhập vào trang quản trị tên miền của mình tại địa chỉ:
+👉 **[Squarespace Domain Management](https://account.squarespace.com/domains/managed/amazebid.co/dns/dns-settings)**
 
-For zero-cost deployment using Render.com, no additional DNS records are needed. The backend will use Render's default URL:
-- `https://amazebid-api.onrender.com`
+Sau đó thêm hoặc chỉnh sửa các bản ghi (DNS Records) sau đây:
 
-Simply update your frontend environment variable:
+| Loại Bản Ghi (Type) | Tên Máy Chủ (Host/Name) | Địa Chỉ Trỏ Đến (Data/Value) | TTL (Thời gian sống) | Ý Nghĩa |
+| :--- | :--- | :--- | :--- | :--- |
+| **A** | `@` hoặc để trống | `123.456.789.123` *(Thay bằng IP máy chủ thật)* | `3600` hoặc Mặc định | Trỏ tên miền chính `amazebid.co` về máy chủ VPS của bạn. |
+| **A** | `api` | `123.456.789.123` *(Thay bằng IP máy chủ thật)* | `3600` hoặc Mặc định | Trỏ tên miền phụ (subdomain) `api.amazebid.co` phụ trách API về VPS. |
+| **CNAME** | `www` | `amazebid.co` | `3600` hoặc Mặc định | Cho phép người dùng truy cập bằng `www.amazebid.co`. |
+
+> **⚠️ Lưu ý cực kỳ quan trọng:** Sau khi cấu hình trên Squarespace, có thể mất từ **5 phút đến 2 giờ** để hệ thống DNS toàn cầu cập nhật đầy đủ (quá trình này gọi là DNS Propagation). bạn có thể kiểm tra xem tên miền đã trỏ đúng IP chưa bằng cách gõ lệnh sau trong Terminal máy tính:
+> ```bash
+> ping api.amazebid.co
+> ```
+
+---
+
+## Bước 2: Thiết Lập Biến Môi Trường `.env` Ở Server VPS
+
+Trong thư mục gốc của dự án trên VPS `/var/www/amazebid-api/.env`, hãy đảm bảo các giá trị đã khớp chính xác với tên miền của bạn:
+
+```env
+# URL Frontend & API Subdomain hợp lệ
+VITE_APP_URL=https://amazebid.co
+VITE_API_URL=https://api.amazebid.co
+
+# CORS cho phép Frontend gửi request lên Backend
+CORS_ORIGIN=https://amazebid.co,https://www.amazebid.co
+
+# Địa chỉ IP VPS và Cổng chạy Backend
+VPS_SERVER_IP=123.456.789.123  # Thay bằng IP máy chủ thực tế của bạn
+PORT=3000
+NODE_ENV=production
 ```
-VITE_API_URL: https://amazebid-api.onrender.com
-```
 
-### Option B: Custom Backend Domain (Optional)
+---
 
-If you want `api.amazebid.co` pointing to Render.com:
+## Bước 3: Triển Khai Nginx Làm Reverse Proxy Đảm Bảo Kết Nối Trơn Tru
 
-1. Add custom domain in Render dashboard
-2. Render will provide CNAME record
-3. Add this record in Squarespace:
+Nginx đóng vai trò tiếp nhận các yêu cầu HTTPS trực tiếp từ người dùng thông qua tên miền `api.amazebid.co` (Cổng 443), giải mã SSL và chuyển tiếp (Proxy) về cổng nội bộ `3000` của Node.js Express đang chạy ẩn phía sau.
 
-```
-Type: CNAME
-Name: api
-Data: [Render-provided CNAME]
-TTL: 4 hrs
-```
-
-### Option C: Traditional VPS Deployment
-
-**Add this record in Squarespace:**
-
-```
-Type: A
-Name: api
-Data: [YOUR_VPS_IP_ADDRESS]
-TTL: 4 hrs
-```
-
-Replace `[YOUR_VPS_IP_ADDRESS]` with your actual VPS IP address.
-
-## Step 5: Verify DNS Propagation
-
-After making changes, verify DNS propagation:
+Nội dung cấu hình tối ưu nhất cho **Nginx** đã được lưu tại tệp `/nginx/api.amazebid.co.conf` trong dự án của bạn. Khi bạn chạy script tự động cài đặt trên VPS:
 
 ```bash
-# Check A record for API subdomain
-dig api.amazebid.co
-
-# Check CNAME for main domain
-dig amazebid.co CNAME
-
-# Check www subdomain
-dig www.amazebid.co CNAME
+sudo ./deploy-vps.sh
 ```
 
-Or use online tools like:
-- https://dnschecker.org
-- https://whatsmydns.net
+Hệ thống sẽ tự động cấu hình Nginx liên kết đến tệp cấu hình đó.
 
-DNS propagation typically takes 15 minutes to 48 hours.
+### Những tính năng tối ưu có sắn trong file cấu hình Nginx:
+1. **Hỗ trợ giao thức HTTP/2:** Tăng tốc độ load API và phản hồi bidding thời gian thực siêu nhanh.
+2. **Cấu hình WebSocket (Socket.io) chuyên biệt:** Giúp duy trì kết nối bền vững cho luồng live stream và cập nhật giá đấu thầu liên tục không bị ngắt quãng giữa chừng.
+3. **Giới hạn kích thước file upload (client_max_body_size 50M):** Giúp người bán đăng ảnh sản phẩm sắc nét dung lượng cao mà không bị chặn bởi giới hạn mặc định của Nginx (thường chỉ có 1MB).
+4. **Header Bảo mật nghiêm ngặt:** Chống tấn công nhúng frame clickjacking, XSS và áp dụng chính sách HSTS cưỡng chế luôn luôn kết nối HTTPS.
 
-## Step 6: SSL Certificate Setup
+---
 
-### Frontend (Vercel)
-- SSL is automatically handled by Vercel
-- No additional configuration needed
+## Bước 4: Kích Hoạt HTTPS Bảo Mật Trơn Tru (SSL Let's Encrypt)
 
-### Backend (VPS)
-You'll need to set up SSL on your VPS using Let's Encrypt:
+Để trình duyệt không cảnh báo "Kết nối không an toàn" (gây lỗi chặn gọi API từ các ứng dụng thương mại điện tử hiện đại yêu cầu giao thức bảo mật cao), bạn cần đăng ký SSL miễn phí bằng Certbot.
+
+Khi chạy script `./deploy-vps.sh`, hãy ấn **`Y`** khi được hỏi để hệ thống tự xử lý. Hoặc bạn có thể tự đăng ký thủ công bất kỳ lúc nào bằng lệnh sau trên VPS:
 
 ```bash
-# Install Certbot
-sudo apt update
-sudo apt install certbot python3-certbot-nginx
-
-# Obtain SSL certificate for api.amazebid.co
 sudo certbot --nginx -d api.amazebid.co
-
-# Auto-renewal is configured automatically
 ```
 
-## Complete DNS Configuration Example
+Certbot sẽ:
+- Xác thực bạn sở hữu tên miền đó.
+- Tạo chứng chỉ SSL Let's Encrypt.
+- Tự động thay đổi tệp cấu hình Nginx để mở cổng 443 thực tế và chuyển hướng tự động toàn bộ người dùng từ HTTP sang HTTPS.
+- Thiết lập tệp cron-job tự động gia hạn chứng chỉ 3 tháng một lần mà bạn không cần can thiệp thủ công.
 
-Your final Squarespace DNS should look like this:
+---
 
+## Bước 5: Đảm Bảo Hoạt Động Trơn Tru Bằng Trình Quản Lý PM2 Cluster
+
+Sau khi kết nối tên miền, việc quản lý tiến trình của NodeJS vô cùng thiết yếu để giữ hệ thống online 24/7. Chúng ta sẽ chạy Backend thông qua **PM2** sử dụng cấu hình tối ưu tại `ecosystem.config.cjs`:
+
+- **Chế độ ClusterMode (exec_mode: 'cluster'):** Tận dụng tối đa 100% dung lượng phần cứng CPU của VPS (ví dụ VPS có 2 hay 4 Cores thì PM2 sẽ tự phân bổ chạy 4 tiến trình song song giúp giảm tải nghẽn mạng khi có hàng triệu lượt đấu giá cùng lúc).
+- **AutoRestart:** Nếu ứng dụng của bạn gặp lỗi bất ngờ về bộ nhớ hoặc cơ sở dữ liệu và bị crash, PM2 sẽ tự động tái khởi động lại app ngay lập tức chỉ trong mili-giây giúp khách hàng không bị gián đoạn trải nghiệm mua sắm.
+
+Bạn có thể quản lý dịch vụ bằng các lệnh hữu ích sau:
+```bash
+# Xem danh sách tiến trình đang hoạt động
+pm2 status
+
+# Xem log lỗi/bidding trực tiếp theo thời gian thực để debug
+pm2 logs amazebid-backend
+
+# Giám sát trực quan lượng RAM/CPU tiêu thụ từ các node
+pm2 monit
 ```
-Type    Name    Data                            TTL
-CNAME   @       cname.vercel.app                4 hrs
-CNAME   www     cname.vercel.app                4 hrs
-A       api     123.456.789.012                 4 hrs
-TXT     @       v=spf1 -all                     4 hrs (if using email)
-TXT     _dmarc  v=DMARC1; p=reject; sp=reject   4 hrs (if using email)
-```
 
-## Troubleshooting
+---
 
-### DNS not propagating
-- Wait up to 48 hours for full propagation
-- Clear your browser cache and DNS cache
-- Check for typos in DNS records
+## Danh Sách Kiểm Tra Khi Hoàn Tất (Checklist)
 
-### SSL certificate errors
-- Ensure DNS is fully propagated before requesting SSL
-- Check that your VPS firewall allows port 80 and 443
-- Verify Nginx/Apache configuration
+Sau khi làm xong các bước trên, hãy đảm bảo hệ thống trơn tru bằng cách kiểm tra:
 
-### CORS errors
-- Ensure backend CORS configuration includes both domains
-- Check that environment variables are set correctly
-- Verify API endpoint URLs in frontend
+-  Mở trình duyệt, gõ `https://api.amazebid.co/api/health` trả về kết quả JSON dạng `{"status": "ok"}` và có biểu tượng khóa xanh (SSL hợp lệ).
+-  Khi truy cập ứng dụng Frontend `https://amazebid.co`, bảng điều khiển không xuất hiện lỗi đỏ `CORS Error` trong tab Network của DevTools.
+-  Tính năng chat trực tiếp và trả giá đấu thầu thời gian thực (realtime bidding) phản hồi ngay lập tức (không hiển thị dòng cảnh báo mất kết nối Socket.io).
 
-## Next Steps
-
-After DNS configuration:
-1. Deploy frontend to Vercel
-2. Deploy backend to VPS
-3. Configure SSL on VPS
-4. Update environment variables
-5. Test the complete setup
-
-See `HYBRID_DEPLOYMENT_GUIDE.md` for complete deployment instructions.
+Chúc bạn triển khai máy chủ và tên miền thành công rực rỡ!
