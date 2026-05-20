@@ -1,0 +1,852 @@
+
+export enum ItemType {
+  FIXED_PRICE = 'FIXED_PRICE',
+  AUCTION = 'AUCTION'
+}
+
+export enum OrderStatus {
+  AVAILABLE = 'AVAILABLE',
+  PENDING_VERIFICATION = 'PENDING_VERIFICATION',
+  PENDING_PAYMENT = 'PENDING_PAYMENT',
+  PAID_ESCROW = 'PAID_ESCROW',
+  PENDING_SHIPMENT = 'PENDING_SHIPMENT',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  COMPLETED = 'COMPLETED',
+  RETURNED = 'RETURNED',
+  CANCELLED = 'CANCELLED',
+  OUT_OF_STOCK = 'OUT_OF_STOCK'
+}
+
+export interface Bid {
+  id: string;
+  userId: string;
+  userName: string;
+  amount: number;
+  timestamp: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  type: 'BANK' | 'CARD' | 'WALLET';
+  providerName: string; // Vietcombank, Visa, Momo
+  accountNumber: string; // Will be masked in UI
+  holderName: string;
+  isDefault: boolean;
+}
+
+export interface SocialAccount {
+  provider: 'facebook' | 'google' | 'instagram' | 'twitter';
+  connected: boolean;
+  username?: string;
+}
+
+export enum UserTier {
+  BRONZE = 'BRONZE',
+  SILVER = 'SILVER',
+  GOLD = 'GOLD',
+  DIAMOND = 'DIAMOND'
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  points: number;
+  isCompleted: boolean;
+  type: 'WATCH_STREAM' | 'AUCTION_BID' | 'PURCHASE';
+}
+
+export interface Voucher {
+  id: string;
+  code: string;
+  discount: number; // Percent or fixed amount
+  type: 'PERCENTAGE' | 'FIXED_AMOUNT';
+  minPurchase: number;
+  pointsRequired: number;
+  expiryDate: string;
+}
+
+export interface AffiliateAccount {
+  id: string;
+  platform: string; // e.g., 'Amazon', 'Shopee', 'Lazada', 'Tiki'
+  affiliateId: string; // The user's tracking ID (e.g., ref=user123)
+  isActive: boolean;
+}
+
+export interface WalletTransaction {
+  id: string;
+  type: 'DEPOSIT' | 'WITHDRAWAL' | 'ESCROW_RELEASE' | 'FEE' | 'PURCHASE' | 'AI_FEE' | 'AI_REVENUE';
+  amount: number;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  timestamp: string;
+  description: string;
+}
+
+export interface EscrowItem {
+  id: string;
+  orderId: string;
+  amount: number;
+  expectedReleaseDate: string;
+  status: 'HELD' | 'RELEASED' | 'REFUNDED';
+  productName: string;
+}
+
+export interface UserWallet {
+  balance: number;
+  pendingBalance: number;
+  bankAccount?: {
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+  };
+  kycStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
+  transactions?: WalletTransaction[];
+  escrowItems?: EscrowItem[];
+}
+
+export interface User {
+  id: string;
+  userId?: string; // Custom login identifier/Staff ID
+  firebaseUid?: string;
+  fullName: string;
+  email: string;
+  password?: string; // Hashed password
+  tokenVersion?: number; // For session invalidation
+  twoFactorEnabled: boolean;
+  twoFactorSecret?: string;
+  phone?: string;
+  avatar: string;
+  address?: string;
+  joinDate: string;
+  balance: number; // Legacy balance
+  wallet?: UserWallet; // New Escrow Wallet
+  paymentMethods: PaymentMethod[];
+  // Social & Referral
+  socialAccounts?: SocialAccount[];
+  referralCode?: string;
+  referredBy?: string;
+  friendCount?: number;
+  role?: 'USER' | 'ADMIN'; // Added Role
+  // New Social Features
+  followers?: string[]; // Array of User IDs
+  following?: string[]; // Array of User IDs
+  // Gamification
+  points: number;
+  tier: UserTier;
+  badges: string[];
+  reputation: number; // 0-100
+  dailyTasks: Task[];
+  vouchers: Voucher[];
+  /** IDs từ catalog loyalty (db `tasks`) đã hoàn thành — tính điểm theo user */
+  completedLoyaltyTaskIds?: string[];
+  /** IDs voucher loyalty đã đổi */
+  redeemedVoucherIds?: string[];
+  // AI Subscription & Usage
+  aiSubscription?: AISubscription;
+  aiUsage?: AIUsageStats;
+  isTermsConfirmed?: boolean;
+}
+
+export enum AISubscriptionTier {
+  FREE = 'FREE',
+  PRO = 'PRO',
+  BYOK = 'BYOK' // Bring Your Own Key
+}
+
+export enum AITaskType {
+  PRODUCT_ANALYSIS = 'PRODUCT_ANALYSIS',
+  PRICING_SUGGESTION = 'PRICING_SUGGESTION',
+  MARKETING_CONTENT = 'MARKETING_CONTENT',
+  CONTENT_CANONICALIZATION = 'CONTENT_CANONICALIZATION',
+  IMAGE_GENERATION = 'IMAGE_GENERATION',
+  VIDEO_GENERATION = 'VIDEO_GENERATION',
+  SEO_KEYWORD_EXTRACTION = 'SEO_KEYWORD_EXTRACTION',
+  PRODUCT_TITLE_REWRITE = 'PRODUCT_TITLE_REWRITE',
+  PRODUCT_DESCRIPTION_REWRITE = 'PRODUCT_DESCRIPTION_REWRITE'
+}
+
+export enum AITaskStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED'
+}
+
+export interface AISubscription {
+  tier: AISubscriptionTier;
+  startDate: string;
+  expiryDate?: string;
+  autoRenew: boolean;
+  priceMonth: number;
+}
+
+export interface AIUsageStats {
+  totalTokens: number;
+  totalRequests: number;
+  remainingCredits?: number; // For Free/Pro tiers
+  lastRequestDate: string;
+  usageHistory: {
+    date: string;
+    tokens: number;
+    type: string;
+    cost?: number;
+  }[];
+}
+
+// --- New Social Types ---
+export interface Review {
+  id: string;
+  productId?: string;
+  storeId?: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  rating: number; // 1-5
+  comment: string;
+  images?: string[];
+  likes: number;
+  createdAt: string;
+}
+
+export interface PostComment {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface FeedPost {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  images?: string[];
+  relatedProductId?: string;
+  likes: number;
+  comments: number;
+  commentsList?: PostComment[];
+  createdAt: string;
+  isAiGenerated?: boolean;
+}
+// ------------------------
+
+// New Interface for Admin Reporting
+export interface Transaction {
+  id: string;
+  userId: string;
+  productId: string;
+  amount: number;
+  type: 'PURCHASE' | 'FEE' | 'DEPOSIT';
+  timestamp: string;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED';
+}
+
+// --- Virtual Avatar Types ---
+
+export interface AvatarCustomization {
+  heightScale: number; // 0.9 to 1.1
+  skinToneHash: string; // Hex color for overlay tint
+  hairStyle: 'LONG' | 'SHORT' | 'BOB' | 'PONYTAIL';
+  language: 'vi-VN' | 'en-US' | 'ja-JP' | 'ko-KR' | 'zh-CN';
+  voiceSpeed: number; // 0.5 to 2
+  voicePitch: number; // 0.5 to 2
+  outfitColor?: string; // New: Hex color for outfit tint
+  eyeColor?: string; // New: Hex color for eyes
+  bodyType?: 'SLIM' | 'ATHLETIC' | 'CURVY'; // New: Body type
+}
+
+export interface AvatarConfig {
+  id: string;
+  name: string;
+  role: 'FASHION_MODEL' | 'SALES_EXPERT' | 'SINGER' | 'FRIENDLY_HOST';
+  gender: 'FEMALE' | 'MALE';
+  voiceTone: string;
+  image: string; // Base visualization (Thumbnail)
+  // Video States for Realism
+  idleVideo: string;    // Waiting/Listening
+  talkingVideo: string; // Explaining/Selling
+  singingVideo?: string; // Performing
+}
+
+export interface AvatarOutfit {
+  id: string;
+  name: string;
+  image: string; // Overlay image or texture
+  style: string;
+}
+
+export interface AvatarEnvironment {
+  id: string;
+  name: string;
+  image: string;
+  type: 'STUDIO' | 'STAGE' | 'OUTDOOR' | 'SHOP';
+  lightingColor: string; // Hex color to blend avatar with bg
+  cameraPosition?: [number, number, number];
+  modelPosition?: [number, number, number];
+  modelScale?: number;
+}
+// ----------------------------
+
+export interface DiscountCode {
+  id: string;
+  code: string;
+  type: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+  value: number; // e.g. 10 for 10%, 50 for $50
+  minPurchase?: number;
+  maxDiscount?: number;
+  expiryDate: string;
+  isActive: boolean;
+}
+
+export interface ShippingOption {
+  id: string;
+  name: string;
+  provider: string;
+  estimatedDays: string;
+  price: number;
+}
+
+export interface TrackingEvent {
+  id: string;
+  status: string;
+  location: string;
+  timestamp: string;
+  description: string;
+}
+
+export interface ShippingInfo {
+  trackingNumber: string;
+  carrier: string;
+  status: string;
+  events: TrackingEvent[];
+  estimatedDelivery: string;
+}
+
+export interface PackagingInfo {
+  length: number; // cm
+  width: number;  // cm
+  height: number; // cm
+  weight: number; // kg
+  isFragile: boolean;
+}
+
+export enum SalesAssistantTone {
+  aggressive = 'aggressive',
+  luxury = 'luxury',
+  friendly = 'friendly'
+}
+
+export interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number; // For Auction: Starting Price
+  originalPrice?: number; // New: Original Price for discounts
+  currentBid?: number;
+  bidCount?: number;
+  bidHistory?: Bid[]; // New: List of bids
+  stepPrice?: number; // New: Minimum increment
+  image: string;
+  category: string;
+  type: ItemType;
+  startTime?: string; // New: Auction start time (Warm-up period)
+  endTime?: string; 
+  autoRestart?: boolean; // New: Auto-restart auction if no bids
+  rating: number;
+  reviewCount: number;
+  status: OrderStatus;
+  sellerId: string;
+  payoutMethod?: string;
+  // Affiliate Fields
+  isAffiliate?: boolean;
+  affiliateLink?: string;
+  platformName?: string; // e.g. "Amazon", "Shopee"
+  commissionRate?: number; // e.g. 5%
+  // Flash Sale Fields
+  isFlashSale?: boolean;
+  flashSalePrice?: number;
+  flashSaleEndTime?: string;
+  stock?: number;
+  sold?: number;
+  unit?: string;         // New: Unit (Cái, Kg, Bộ...)
+  currency?: string;     // New: Currency (VND, USD, EUR...)
+  // Automatic Pricing & Recovery Logic
+  costPrice?: number;         // Real value/Cost per unit
+  totalStock?: number;        // Initial stock
+  breakEvenQuantity?: number; // Units to sell to recover total cost
+  pricingStrategy?: 'AUTO' | 'MANUAL';
+  isRecoveryPhase?: boolean;  // True if still selling to recover cost
+  systemFeeRate?: number;     // Default 0.05 (5%)
+  videoUrl?: string;          // URL to product video
+  // Shipping Tracking
+  shippingInfo?: ShippingInfo;
+  packagingInfo?: PackagingInfo; // New: Packaging Info
+  // AI Sales Assistant Fields
+  minNegotiationPrice?: number; // Minimum price the AI can accept
+  isNegotiable?: boolean;
+  privacyMode?: boolean;
+  // Store Integration
+  storeId?: string;
+  menuItemId?: string;
+  specialTaxRate?: number; // New: Special consumption tax rate (e.g. 10% for luxury)
+  vatRate?: number; // New: VAT rate (default 8% or 10%)
+  // AI Order Classification
+  aiPriority?: 'URGENT' | 'NORMAL' | 'LOW';
+  aiTags?: string[];
+  soldDate?: string; // ISO format: YYYY-MM-DD
+  // Fraud Detection
+  isFraudulent?: boolean;
+  fraudReason?: string;
+  barcode?: string;
+  salesAssistantTone?: SalesAssistantTone;
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  sellerId?: string; // New: Primary seller ID (for POS/Direct sales)
+  storeId?: string;  // New: Store ID if applicable
+  isPOS?: boolean;   // New: Flag for POS orders
+  items: CartItem[];
+  totalAmount: number;
+  status: OrderStatus;
+  createdAt: string;
+  shippingAddress?: string;
+  paymentMethod?: string;
+  shippingInfo?: ShippingInfo;
+  isFraudulent?: boolean;
+  fraudReason?: string;
+  escrowStatus?: 'held' | 'released' | 'refunded';
+}
+
+export interface SystemWallet {
+  balance: number;
+  totalRevenue: number;
+  totalFeesCollected: number;
+  lastWithdrawalDate?: string;
+  withdrawalLimitRate: number; // Default 0.25 (25%)
+  bankAccount?: {
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+  };
+  transactions?: WalletTransaction[];
+}
+
+export interface LiveStream {
+  id: string;
+  title: string;
+  viewerCount: number;
+  hostName: string;
+  hostAvatar: string;
+  thumbnail: string;
+  featuredProductIds: string[];
+  isLive: boolean;
+}
+
+export interface CartItem extends Product {
+  quantity: number;
+}
+
+export interface Message {
+  role: 'user' | 'model';
+  text: string;
+}
+
+export interface ProductIngredient {
+  materialId: string;
+  materialName: string;
+  quantity: number;
+  unit: string;
+  costPerUnit: number;
+  wastagePercentage: number; // % hao hụt
+}
+
+export interface ProductRecipe {
+  ingredients: ProductIngredient[];
+  laborCostEstimate: number;
+  packagingCost: number; // Chi phí bao bì
+  overheadCost: number; // Chi phí vận hành (điện, nước, mặt bằng)
+  otherExpenses: number;
+  yieldPortions: number; // Định lượng ra bao nhiêu suất
+  totalCost: number;
+  costPerPortion: number; // Giá vốn trên mỗi suất
+}
+
+export interface StoreMenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  isAvailable: boolean;
+  barcode?: string;
+  vatRate?: number; // New: VAT rate
+  specialTaxRate?: number; // New: Special tax rate
+  recipe?: ProductRecipe; // New: Recipe for cost calculation
+}
+
+export enum StaffRole {
+  SUPER_ADMIN = 'SUPER_ADMIN', // Toàn quyền chuỗi
+  STORE_MANAGER = 'STORE_MANAGER', // Quản lý chi nhánh
+  CASHIER = 'CASHIER', // Thu ngân
+  BARISTA = 'BARISTA', // Pha chế
+  KITCHEN_CHEF = 'KITCHEN_CHEF', // Bếp trưởng
+  INVENTORY_MANAGER = 'INVENTORY_MANAGER', // Quản lý kho
+  SALES_EXECUTIVE = 'SALES_EXECUTIVE', // Nhân viên kinh doanh
+  MARKETING_SPECIALIST = 'MARKETING_SPECIALIST', // Nhân viên marketing
+  SECURITY_GUARD = 'SECURITY_GUARD', // Bảo vệ
+  DELIVERY_DRIVER = 'DELIVERY_DRIVER', // Giao hàng
+  MAINTENANCE_TECH = 'MAINTENANCE_TECH' // Kỹ thuật bảo trì
+}
+
+export enum StaffPermission {
+  MANAGE_PRODUCTS = 'MANAGE_PRODUCTS',
+  MANAGE_INVENTORY = 'MANAGE_INVENTORY',
+  CREATE_ORDER = 'CREATE_ORDER',
+  VIEW_REPORTS = 'VIEW_REPORTS',
+  MANAGE_STAFF = 'MANAGE_STAFF',
+  VOID_TRANSACTION = 'VOID_TRANSACTION',
+  MANAGE_FINANCE = 'MANAGE_FINANCE',
+  MANAGE_MARKETING = 'MANAGE_MARKETING',
+  VIEW_CUSTOMER_DATA = 'VIEW_CUSTOMER_DATA'
+}
+
+export interface StoreStaff {
+  id: string;
+  userId: string;
+  password?: string;
+  name: string;
+  email: string;
+  role: StaffRole;
+  position?: string; // e.g. "Senior Barista", "Lead Sales"
+  departmentId?: string; // Specific department within the store/company
+  storeId: string;
+  corporationId?: string; // Top-level corp ID
+  permissions: StaffPermission[];
+  status: 'ACTIVE' | 'INACTIVE';
+  joinDate: string;
+  // Financial & Performance (Internal)
+  baseSalary?: number;
+  kpiScore?: number;
+  overtimeHours?: number;
+  timeRecords?: TimeRecord[];
+}
+
+export interface TimeRecord {
+  id: string;
+  staffId: string;
+  type: 'CHECK_IN' | 'CHECK_OUT';
+  timestamp: string;
+  location?: { lat: number, lng: number };
+  method: 'QR' | 'GEOLOCATION' | 'MANUAL';
+  storeId: string;
+}
+
+export enum OrganizationType {
+  CORPORATION = 'CORPORATION',
+  COMPANY = 'COMPANY',
+  DEPARTMENT = 'DEPARTMENT',
+  BRANCH = 'BRANCH'
+}
+
+export interface Corporation {
+  id: string;
+  ownerId: string;
+  name: string;
+  description?: string;
+  taxCode?: string;
+  address?: string;
+  logo?: string;
+  createdAt: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  settings?: {
+    maxBranches: number;
+    aiEnabled: boolean;
+  };
+}
+
+export interface Branch {
+  id: string;
+  corporationId: string;
+  managerId?: string; // Staff ID of the manager
+  name: string;
+  address: string;
+  phone: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  // Detailed Profile Fields
+  area?: number;               // Diện tích (m2)
+  services?: string[];         // Dịch vụ
+  perks?: string[];            // Đãi ngộ cho nhân sự tại chi nhánh
+  recruitmentInfo?: string;    // Tuyển dụng
+  parkingInfo?: string;        // Bãi giữ xe
+  images?: string[];           // Ảnh chi nhánh
+}
+
+export enum UserZone {
+  USER = 'USER',           // Area 1: Standard Users
+  BUSINESS = 'BUSINESS',   // Area 2: Admins/Owners
+  WORKFORCE = 'WORKFORCE'  // Area 3: Staff/Employees
+}
+
+export interface Department {
+  id: string;
+  corporationId: string;
+  branchId?: string;
+  name: string;
+  managerId?: string;
+  description?: string;
+}
+
+export interface JobPosting {
+  id: string;
+  title: string;
+  type: 'Full-time' | 'Part-time';
+  salary: string;
+  description: string;
+  requirements: string[];
+  status: 'OPEN' | 'CLOSED';
+  createdAt: string;
+}
+
+export interface PhysicalStore {
+  id: string;
+  ownerId: string;
+  parentId?: string; // Point to Corporation or Company
+  corporationId?: string; // Point to Corporation for hierarchical access
+  type: OrganizationType;
+  name: string;
+  description: string;
+  address: string;
+  phone: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  images: string[];
+  openingHours: string;
+  rating: number;
+  reviewCount: number;
+  menu: StoreMenuItem[];
+  qrCode?: string;
+  createdAt: string;
+  staffIds: string[];
+  // Hierarchical metadata
+  organizationPath?: string; // e.g. "CorpX/CompX1/Deptx1"
+  // Detailed Profile Fields
+  area?: number;
+  services?: string[];
+  perks?: string[];
+  recruitmentInfo?: string;
+  jobPostings?: JobPosting[];
+  parkingInfo?: string;
+  structureDiagram?: string; // Image URL
+  reviews?: Review[];
+}
+
+export interface ContentPost {
+  id: string;
+  title: string;
+  content: string; // Markdown or HTML
+  keywords: string[];
+  generatedImages: string[];
+  generatedVideo?: string;
+  status: 'DRAFT' | 'PUBLISHED';
+  platform: 'BLOG' | 'FACEBOOK' | 'INSTAGRAM' | 'TIKTOK';
+  createdAt: string;
+  relatedProductId?: string;
+}
+
+export interface KnowledgeItem {
+  id: string;
+  type: 'TEXT' | 'IMAGE' | 'VIDEO' | 'SPEC' | 'INSTRUCTION';
+  title: string;
+  content: string; // For images/videos this is the URL, for text/specs it's the content
+  tags: string[];
+  createdAt: string;
+  createdBy: string;
+  creatorName: string;
+  isLocalReference?: boolean;
+  localPath?: string;
+  isPublic?: boolean;
+}
+
+// --- Supply Chain Management ---
+export interface Supplier {
+  id: string;
+  ownerId: string;
+  name: string;
+  contactPerson: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  website?: string;
+  rating?: number;
+}
+
+export interface RawMaterial {
+  id: string;
+  ownerId: string;
+  name: string;
+  category: string; // Phân loại (VD: Thực phẩm, Linh kiện, Bao bì...)
+  unit: string; // Đơn vị tính (kg, m, cái, bộ, thùng...)
+  costPrice: number;
+  currency: string; // Loại tiền tệ (VND, USD, EUR...)
+  supplierId: string;
+  stock: number;
+  minStockAlert: number;
+  lastPurchaseDate?: string;
+}
+
+export interface PurchaseInvoice {
+  id: string;
+  ownerId: string;
+  supplierId: string;
+  items: {
+    materialId: string;
+    materialName: string;
+    quantity: number;
+    unitPrice: number;
+    currency: string;
+  }[];
+  totalAmount: number;
+  currency: string;
+  invoiceDate: string;
+  status: 'PENDING' | 'PAID' | 'CANCELLED';
+  imageUrl?: string;
+  invoiceType: string; // Loại hóa đơn (VD: VAT, Hóa đơn bán lẻ...)
+  purpose: string; // Mục đích chi tiêu
+  requesterName: string; // Người thực hiện/Người dùng hóa đơn
+  description?: string; // Mô tả chi tiết hóa đơn
+}
+
+// --- Labor & HR Management ---
+export interface Employee {
+  id: string;
+  ownerId: string;
+  name: string;
+  role: string;
+  phone: string;
+  email?: string;
+  salaryBase: number;
+  salaryType: 'MONTHLY' | 'DAILY' | 'HOURLY';
+  // Detailed salary items
+  allowanceLunch: number;
+  allowanceTravel: number;
+  allowancePhone: number;
+  allowanceResponsibility?: number;
+  allowanceUniform?: number;
+  allowanceHousing?: number;
+  allowanceOther: number;
+  bonusStandard: number;
+  bonusKPI?: number;
+  bonusTet?: number;
+  insuranceSocial?: number;
+  insuranceHealth?: number;
+  insuranceUnemployment?: number;
+  insuranceContribution: number;
+  taxCode: string;
+  bankAccount: string;
+  bankName: string;
+  bankBranch?: string;
+  joinDate: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface LaborCost {
+  id: string;
+  ownerId: string;
+  employeeId: string;
+  amount: number;
+  date: string;
+  type: 'SALARY' | 'BONUS' | 'OVERTIME';
+  note?: string;
+}
+
+// --- Equity & Shareholder Management ---
+export interface Shareholder {
+  id: string;
+  ownerId: string;
+  name: string;
+  capitalContribution: number; // Cash (Tiền mặt)
+  
+  // Material basis (Cơ sở vật chất)
+  assetContributionValue: number; 
+  assetDetails?: string; // Chi tiết tài sản (Máy móc, mặt bằng...)
+  assetValueAtAddition?: number; // Giá trị tại thời điểm góp
+  assetUsefulLife?: number; // Thời gian sử dụng dự kiến (năm)
+  
+  // Sweat equity (Công sức)
+  laborContributionValue: number; 
+  laborDetails?: string; // Mô tả công sức (Quản lý, kỹ thuật...)
+  laborMarketSalary?: number; // Lương thị trường tương đương
+  laborActualSalary?: number; // Lương thực nhận (nếu có)
+  laborMonths?: number; // Số tháng cam kết
+  laborMultiplier?: number; // Hệ số kinh nghiệm/đóng góp (1.0 - 3.0)
+  
+  // Intangible assets (Giá trị cốt lõi)
+  coreValueContributionValue: number; 
+  coreValueDetails?: string; // Mô tả giá trị cốt lõi (Thương hiệu, bí quyết...)
+  coreValueBrand?: number; // Định giá thương hiệu
+  coreValueIP?: number; // Định giá sở hữu trí tuệ/bí quyết
+  coreValueNetwork?: number; // Định giá mạng lưới quan hệ/khách hàng
+  
+  sharePercentage: number; // Calculated
+  joinDate: string;
+  role: 'FOUNDER' | 'INVESTOR' | 'ADVISOR' | 'EMPLOYEE';
+  group: 'FOUNDER' | 'INVESTOR' | 'ESOP'; // New: Grouping for UI and legal
+  status: 'ACTIVE' | 'PASSIVE' | 'EXITED';
+  exitDate?: string;
+  exitValue?: number;
+  exitNote?: string;
+}
+
+export interface GlobalConfig {
+  platformFeeRate: number;
+  defaultVatRate: number;
+  personalIncomeTaxRate: number;
+  currencySymbol: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  name?: string; // For administrative purposes
+  subject: string;
+  to: string;
+  type: 'PURCHASE' | 'AUCTION_WIN' | 'KYC' | 'PAYMENT_CONFIRMATION' | 'SHIPPING' | 'SYSTEM' | 'AUCTION' | 'PAYMENT' | 'MARKETING';
+  isRead: boolean;
+  timestamp: string;
+  htmlContent: string;
+  lastModified?: string;
+}
+
+export interface ProfitDistribution {
+  id: string;
+  ownerId: string;
+  totalProfit: number;
+  
+  // Tier 1: Funds (50%)
+  reserveFund: number; // 10%
+  salaryFund: number; // 20%
+  bonusFund: number; // 5%
+  devFund: number; // 15%
+  totalFunds: number; // Sum of above
+  
+  // Tier 2: Net Profit
+  netProfit: number; // totalProfit - totalFunds
+  
+  // Tier 3: Distribution
+  distributedAmount: number; // 50% of netProfit
+  retainedAmount: number; // 50% of netProfit (Reinvestment)
+  
+  period: string;
+  distributions: {
+    shareholderId: string;
+    amount: number;
+  }[];
+  createdAt: string;
+}

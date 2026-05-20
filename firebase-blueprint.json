@@ -1,0 +1,102 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "avatar": { "type": "string" },
+        "role": { "type": "string", "enum": ["USER", "ADMIN"] },
+        "balance": { "type": "number" },
+        "points": { "type": "number" },
+        "tier": { "type": "string" },
+        "joinDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "fullName", "email"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Product or Auction item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "image": { "type": "string" },
+        "category": { "type": "string" },
+        "type": { "type": "string", "enum": ["FIXED_PRICE", "AUCTION"] },
+        "sellerId": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "price", "sellerId"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Purchase or Auction order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "totalAmount", "status", "createdAt"]
+    },
+    "PhysicalStore": {
+      "title": "Physical Store",
+      "description": "Physical branch or outlet",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "address": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "ownerId"]
+    },
+    "StoreStaff": {
+      "title": "Store Staff",
+      "description": "Employee or staff member",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "storeId": { "type": "string" },
+        "role": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "userId", "storeId", "role"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Available products and auctions"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "/stores/{storeId}": {
+      "schema": "PhysicalStore",
+      "description": "Physical store locations"
+    },
+    "/staff/{staffId}": {
+      "schema": "StoreStaff",
+      "description": "Workforce mapping"
+    }
+  }
+}

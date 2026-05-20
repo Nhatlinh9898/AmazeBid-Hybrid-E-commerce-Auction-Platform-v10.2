@@ -1,0 +1,324 @@
+
+import React, { ReactNode } from 'react';
+import { signInWithPopup, linkWithPopup } from 'firebase/auth';
+import { auth, googleProvider, facebookProvider, githubProvider } from '../firebase';
+import { User, SocialAccount } from '../types';
+import { api } from '../services/api';
+import { AuthContext } from './AuthContext';
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = React.useState<User | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  const adminEmail = (process.env.VITE_ADMIN_EMAIL || 'Nhatlinhckm2016@gmail.com').toLowerCase();
+
+  const assignRole = React.useCallback((userData: any): User => {
+    if (!userData) return userData;
+    const userEmail = (userData.email || '').toLowerCase();
+    const isAdmin = userEmail === adminEmail;
+    
+    console.log('Assigning role for:', userEmail, 'Admin email:', adminEmail, 'Is Admin:', isAdmin);
+    
+    return {
+      ...userData,
+      role: isAdmin ? 'ADMIN' : (userData.role || 'USER')
+    };
+  }, [adminEmail]);
+
+  const refreshUser = React.useCallback(async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    try {
+      const data = await api.auth.me();
+      if (data.user) {
+        setUser(assignRole(data.user));
+      }
+    } catch (error) {
+      console.error('refreshUser error:', error);
+    }
+  }, [assignRole]);
+
+  // Load user from backend on mount and listen to Firebase auth changes
+  React.useEffect(() => {
+    let unsubscribeAuth: (() => void) | undefined;
+
+    const initAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      
+      if (token) {
+        try {
+          const data = await api.auth.me();
+          if (data.user) {
+            setUser(assignRole(data.user));
+          }
+        } catch (error) {
+          console.log('No active session or invalid token:', error);
+          localStorage.removeItem('auth_token');
+          setUser(null);
+        }
+      }
+
+      if (auth) {
+        unsubscribeAuth = auth.onAuthStateChanged(async (firebaseUser) => {
+          console.log('Firebase Auth State Changed:', firebaseUser?.email);
+          // If we have a firebase user but no local user, try to sync
+          if (firebaseUser && !user) {
+             try {
+               const idToken = await firebaseUser.getIdToken();
+               const data = await api.auth.loginWithFirebase(idToken);
+               if (data.user && data.token) {
+                 localStorage.setItem('auth_token', data.token);
+                 setUser(assignRole(data.user));
+               }
+             } catch (e) {
+               console.error('Error syncing Firebase user:', e);
+             }
+          }
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    return () => {
+      if (unsubscribeAuth) unsubscribeAuth();
+    };
+  }, [assignRole]);
+
+  const login = async (email: string, pass: string, expiresIn: string = '24h'): Promise<{ success: boolean, twoFactorRequired?: boolean, email?: string, message?: string }> => {
+    try {
+      const data = await api.auth.login(email, pass, expiresIn);
+      if ((data as any).twoFactorRequired) {
+        return { success: false, twoFactorRequired: true, email: (data as any).email };
+      }
+      if (data.user && data.token) {
+        localStorage.setItem('auth_token', data.token);
+        setUser(assignRole(data.user));
+        return { success: true };
+      }
+      return { success: false, message: 'Dữ liệu trả về không hợp lệ' };
+    } catch (error: any) {
+      const msg = error.message || 'Lỗi đăng nhập không xác định';
+      console.error('Login error:', msg);
+      return { success: false, message: msg };
+    }
+  };
+
+  const verify2FA = async (email: string, code: string): Promise<boolean> => {
+    try {
+      const data = await api.auth.login2FA(email, code);
+      if (data.user && data.token) {
+        localStorage.setItem('auth_token', data.token);
+        setUser(assignRole(data.user));
+        return true;
+      }
+      return false;
+    } catch {
+      console.error('2FA verification error');
+      return false;
+    }
+  };
+
+  const setup2FA = async (): Promise<{ secret: string, qrCode: string }> => {
+    try {
+      return await api.auth.setup2FA();
+    } catch (error) {
+      console.error('2FA setup error:', error);
+      throw error;
+    }
+  };
+
+  const confirm2FA = async (code: string, secret: string): Promise<boolean> => {
+    try {
+      const data = await api.auth.verify2FA(code, secret);
+      if (data.success && user) {
+        setUser({ ...user, twoFactorEnabled: true });
+      }
+      return data.success;
+    } catch (error) {
+      console.error('2FA confirmation error:', error);
+      return false;
+    }
+  };
+
+  const toggle2FA = async (enabled: boolean): Promise<boolean> => {
+    try {
+      const data = await api.auth.toggle2FA(enabled);
+      if (user) {
+        setUser({ ...user, twoFactorEnabled: data.enabled });
+      }
+      return true;
+    } catch (error) {
+      console.error('2FA toggle error:', error);
+      return false;
+    }
+  };
+
+  const loginWithPhone = async (phone: string): Promise<boolean> => {
+    // For now, simulate phone login as a normal login or a special register
+    const result = await register(`User ${phone.slice(-4)}`, `${phone}@phone.com`, '123456');
+    return result.success;
+  };
+
+  const loginWithSocial = async (provider: 'google' | 'facebook' | 'github'): Promise<boolean> => {
+    try {
+      if (!auth) {
+        alert(`${provider.charAt(0).toUpperCase() + provider.slice(1)} Login is not configured. Please set up Firebase API keys in settings.`);
+        return false;
+      }
+
+      let authProvider;
+      switch (provider) {
+        case 'google': authProvider = googleProvider; break;
+        case 'facebook': authProvider = facebookProvider; break;
+        case 'github': authProvider = githubProvider; break;
+        default: authProvider = googleProvider;
+      }
+
+      const result = await signInWithPopup(auth, authProvider);
+      const idToken = await result.user.getIdToken();
+      const data = await api.auth.loginWithFirebase(idToken);
+      
+      if (data.user && data.token) {
+        localStorage.setItem('auth_token', data.token);
+        setUser(assignRole(data.user));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Social login error:', error);
+      return false;
+    }
+  };
+
+  const linkSocialAccount = async (provider: 'google' | 'facebook' | 'github' | 'instagram'): Promise<boolean> => {
+    try {
+      if (!auth) {
+        alert('Firebase is not configured.');
+        return false;
+      }
+
+      // Instagram is not natively supported by Firebase Link, simulate for now
+      if (provider === 'instagram') {
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+        if (user) {
+          const currentSocial = user.socialAccounts || [];
+          const updated: SocialAccount[] = [
+            ...currentSocial.filter(s => s.provider !== 'instagram'),
+            { provider: 'instagram', connected: true, username: `${user.fullName.replace(/\s/g, '').toLowerCase()}_ig` }
+          ];
+          updateProfile({ socialAccounts: updated });
+          return true;
+        }
+        return false;
+      }
+
+      let authProvider;
+      switch (provider) {
+        case 'google': authProvider = googleProvider; break;
+        case 'facebook': authProvider = facebookProvider; break;
+        case 'github': authProvider = githubProvider; break;
+        default: authProvider = googleProvider;
+      }
+
+      let linkedUser;
+      if (auth.currentUser) {
+        const result = await linkWithPopup(auth.currentUser, authProvider);
+        linkedUser = result.user;
+      } else {
+        // Fallback for hybrid auth: if not in Firebase yet, sign in to link
+        const result = await signInWithPopup(auth, authProvider);
+        linkedUser = result.user;
+      }
+      
+      // Update local state and backend
+      if (user) {
+        const currentSocial = user.socialAccounts || [];
+        const updated: SocialAccount[] = [
+          ...currentSocial.filter(s => s.provider !== provider),
+          { provider: provider as any, connected: true, username: linkedUser.displayName || linkedUser.email || 'linked_account' }
+        ];
+        
+        await api.auth.updateProfile({ socialAccounts: updated });
+        updateProfile({ socialAccounts: updated });
+        return true;
+      }
+      
+      return false;
+    } catch (error: any) {
+      console.error('Link Social Account error:', error);
+      if (error.code === 'auth/credential-already-in-use') {
+        alert('Tài khoản mạng xã hội này đã được liên kết với một người dùng khác.');
+      } else {
+        alert('Có lỗi xảy ra khi liên kết tài khoản: ' + error.message);
+      }
+      return false;
+    }
+  };
+
+  const register = async (name: string, email: string, pass: string): Promise<{ success: boolean, message?: string }> => {
+    try {
+      const data = await api.auth.register(name, email, pass);
+      if (data.user && data.token) {
+        localStorage.setItem('auth_token', data.token);
+        setUser(assignRole(data.user));
+        return { success: true };
+      }
+      return { success: false, message: 'Dữ liệu đăng ký không hợp lệ' };
+    } catch (error: any) {
+      const msg = error.message || 'Lỗi đăng ký không xác định';
+      console.error('Register error:', msg);
+      return { success: false, message: msg };
+    }
+  };
+
+  const resetToken = async () => {
+    if (!user) return;
+    try {
+      await api.auth.resetToken(user.id);
+      await logout();
+    } catch (error) {
+      console.error('Reset token error:', error);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await api.auth.logout();
+      if (auth) {
+        await auth.signOut();
+      }
+      localStorage.removeItem('auth_token');
+      setUser(null);
+    } catch {
+      console.error('Logout error');
+    }
+  };
+
+  const updateProfile = async (updatedData: Partial<User>) => {
+    if (user) {
+        try {
+          const data = await api.auth.updateProfile(updatedData);
+          if (data.user) {
+            setUser(assignRole(data.user));
+          } else {
+            setUser({ ...user, ...updatedData });
+          }
+        } catch (error) {
+          console.error('Update profile error:', error);
+          setUser({ ...user, ...updatedData });
+        }
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, verify2FA, setup2FA, confirm2FA, toggle2FA, register, loginWithPhone, loginWithSocial, linkSocialAccount, logout, updateProfile, resetToken, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// useAuth moved to useAuth.ts

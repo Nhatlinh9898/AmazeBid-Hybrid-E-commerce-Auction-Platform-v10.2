@@ -1,0 +1,101 @@
+
+import bcrypt from 'bcryptjs';
+import jwt, { SignOptions } from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+/**
+ * SecurityService - Lớp bảo mật trung gian
+ * Giúp tách biệt logic kiểm tra quyền Admin khỏi mã nguồn xử lý API.
+ */
+class SecurityService {
+  private static get jwtSecret(): string {
+    return process.env.JWT_SECRET || 'super-secret-key-123';
+  }
+
+  private static get adminEmail(): string {
+    return (process.env.VITE_ADMIN_EMAIL || 'Nhatlinhckm2016@gmail.com').toLowerCase().trim();
+  }
+
+  private static get adminPasswordHash(): string {
+    return process.env.ADMIN_PASSWORD || 'admin123';
+  }
+
+  /**
+   * Tạo JWT Token với thời hạn linh hoạt
+   */
+  static generateToken(payload: any, expiresIn: string | number): string {
+    return jwt.sign(payload, this.jwtSecret, { expiresIn } as any);
+  }
+
+  /**
+   * Xác thực JWT Token
+   */
+  static verifyToken(token: string): any {
+    try {
+      if (!token) {
+        console.error('[SecurityService] No token provided');
+        return null;
+      }
+      const decoded = jwt.verify(token, this.jwtSecret);
+      return decoded;
+    } catch (error: any) {
+      console.error('[SecurityService] Token verification failed:', error.message);
+      if (error.name === 'TokenExpiredError') {
+        return { error: 'EXPIRED', message: error.message };
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Kiểm tra xem thông tin đăng nhập có phải là Admin cao nhất không.
+   */
+  static async verifyAdmin(email: string, password: string): Promise<boolean> {
+    const inputEmail = (email || '').toLowerCase().trim();
+    
+    console.log(`[SecurityService] Verifying admin: ${inputEmail}`);
+    console.log(`[SecurityService] Target admin email: ${this.adminEmail}`);
+
+    if (inputEmail !== this.adminEmail) {
+      console.log(`[SecurityService] Email mismatch`);
+      return false;
+    }
+
+    const isMatch = (password === this.adminPasswordHash) || 
+                    (this.adminPasswordHash.startsWith('$2') && await bcrypt.compare(password, this.adminPasswordHash));
+
+    console.log(`[SecurityService] Password match: ${isMatch}`);
+    return isMatch;
+  }
+
+  /**
+   * Lấy Email Admin (chỉ dùng để gán thông tin khi đăng nhập thành công)
+   */
+  static getAdminEmail(): string {
+    return this.adminEmail;
+  }
+
+  /**
+   * Ghi lại các sự kiện bảo mật quan trọng
+   */
+  static async logEvent(db: any, userId: string | null, action: string, details: any, ip: string = '127.0.0.1'): Promise<void> {
+    try {
+      const log = {
+        id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        userId,
+        action,
+        details,
+        timestamp: new Date().toISOString(),
+        ip
+      };
+      
+      await db.update('security_logs', (logs: any[] = []) => [log, ...logs].slice(0, 500));
+    } catch (error) {
+      console.error('Lỗi khi ghi log bảo mật:', error);
+    }
+  }
+}
+
+export default SecurityService;

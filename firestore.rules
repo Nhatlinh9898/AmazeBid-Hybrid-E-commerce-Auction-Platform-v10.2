@@ -1,0 +1,169 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Primitives & Helpers
+    // ===============================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // Admin lookup targeting either hardcoded list or admins collection
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email.matches('(?i)Nhatlinhckm2016@gmail.com') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // ===============================================================
+    // Validation Blueprints (Phase 1 & 2)
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'fullName', 'email']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.fullName is string && data.fullName.size() <= 256 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.email.matches('^[^@]+@[^@]+\\.[^@]+$');
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['id', 'title', 'price', 'sellerId', 'type']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 256 &&
+             data.price is number && data.price >= 0 &&
+             data.sellerId == request.auth.uid &&
+             data.type in ['FIXED_PRICE', 'AUCTION'];
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['id', 'userId', 'totalAmount', 'status', 'createdAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.totalAmount is number && data.totalAmount >= 0 &&
+             data.status is string &&
+             data.createdAt == request.time;
+    }
+
+    function isValidStore(data) {
+      return data.keys().hasAll(['id', 'name', 'ownerId']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 256 &&
+             data.ownerId == request.auth.uid;
+    }
+
+    function isValidStaff(data) {
+      return data.keys().hasAll(['id', 'userId', 'storeId', 'role']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.storeId is string && data.storeId.size() <= 128 &&
+             data.role is string;
+    }
+
+    // ===============================================================
+    // match Blocks (Phase 4)
+    // ===============================================================
+
+    // User Profiles
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isVerified() && isValidUser(incoming()) && incoming().id == request.auth.uid;
+      allow update: if isVerified() && (request.auth.uid == userId || isAdmin()) &&
+                    isValidUser(incoming()) &&
+                    incoming().id == existing().id &&
+                    incoming().email == existing().email &&
+                    (!incoming().diff(existing()).affectedKeys().hasAny(['role']) || isAdmin());
+    }
+
+    // Products
+    match /products/{productId} {
+      allow read: if true; // Public catalog
+      allow create: if isVerified() && isValidProduct(incoming()) && isValidId(productId);
+      allow update: if isVerified() && (existing().sellerId == request.auth.uid || isAdmin()) &&
+                    isValidProduct(incoming()) &&
+                    incoming().sellerId == existing().sellerId &&
+                    incoming().id == existing().id;
+      allow delete: if isVerified() && (existing().sellerId == request.auth.uid || isAdmin());
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && (existing().userId == request.auth.uid || existing().sellerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.sellerId == request.auth.uid || isAdmin());
+      
+      allow create: if isVerified() && isValidOrder(incoming()) && isValidId(orderId);
+      allow update: if isVerified() && (existing().userId == request.auth.uid || existing().sellerId == request.auth.uid || isAdmin()) &&
+                    isValidOrder(incoming()) &&
+                    incoming().userId == existing().userId &&
+                    incoming().totalAmount == existing().totalAmount &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status', 'shippingInfo']);
+    }
+
+    // Stores
+    match /stores/{storeId} {
+      allow read: if true;
+      allow create: if isVerified() && isValidStore(incoming()) && isValidId(storeId);
+      allow update: if isVerified() && (existing().ownerId == request.auth.uid || isAdmin()) &&
+                    isValidStore(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+    }
+
+    // Staff
+    match /staff/{staffId} {
+      allow read: if isSignedIn() && (
+        existing().userId == request.auth.uid || 
+        get(/databases/$(database)/documents/stores/$(existing().storeId)).data.ownerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isVerified() && 
+                    isValidStaff(incoming()) && 
+                    get(/databases/$(database)/documents/stores/$(incoming().storeId)).data.ownerId == request.auth.uid;
+      allow update: if isVerified() && 
+                    isValidStaff(incoming()) && 
+                    get(/databases/$(database)/documents/stores/$(existing().storeId)).data.ownerId == request.auth.uid &&
+                    incoming().storeId == existing().storeId;
+      allow delete: if isVerified() && 
+                    get(/databases/$(database)/documents/stores/$(existing().storeId)).data.ownerId == request.auth.uid;
+    }
+
+    // Knowledge Base
+    match /knowledge_base/{itemId} {
+      allow read: if isSignedIn();
+      allow write: if isVerified() && isAdmin();
+    }
+
+    // Connection Test
+    match /test/connection {
+      allow read: if isSignedIn();
+    }
+
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+    }
+  }
+}

@@ -1,0 +1,1547 @@
+// ---------- GENERATOR & DATASOURCE ----------
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pg_trgm]
+}
+
+// ---------- ENUMS ----------
+
+enum OrderStatus {
+  AVAILABLE
+  PENDING_VERIFICATION
+  PENDING_PAYMENT
+  PAID_ESCROW
+  PENDING_SHIPMENT
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  RETURNED
+  CANCELLED
+  OUT_OF_STOCK
+  FAILED_PAYMENT
+  REFUND_PENDING
+  REFUND_COMPLETED
+}
+
+enum ItemType {
+  FIXED_PRICE
+  AUCTION
+}
+
+enum CurrencyCode {
+  VND
+  USD
+  JPY
+}
+
+enum AITaskType {
+  PRODUCT_ANALYSIS
+  PRICING_SUGGESTION
+  MARKETING_CONTENT
+  CONTENT_CANONICALIZATION
+  IMAGE_GENERATION
+  VIDEO_GENERATION
+  SEO_KEYWORD_EXTRACTION
+  PRODUCT_TITLE_REWRITE
+  PRODUCT_DESCRIPTION_REWRITE
+}
+
+enum AITaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum LogLevel {
+  INFO
+  WARNING
+  ERROR
+}
+
+enum UserTier {
+  BRONZE
+  SILVER
+  GOLD
+  DIAMOND
+}
+
+enum AISubscriptionTier {
+  FREE
+  PRO
+  BYOK
+}
+
+enum StaffRole {
+  SUPER_ADMIN
+  STORE_MANAGER
+  CASHIER
+  BARISTA
+  KITCHEN_CHEF
+  INVENTORY_MANAGER
+  SALES_EXECUTIVE
+  MARKETING_SPECIALIST
+  SECURITY_GUARD
+  DELIVERY_DRIVER
+  MAINTENANCE_TECH
+}
+
+enum StaffPermission {
+  MANAGE_PRODUCTS
+  MANAGE_INVENTORY
+  CREATE_ORDER
+  VIEW_REPORTS
+  MANAGE_STAFF
+  VOID_TRANSACTION
+  MANAGE_FINANCE
+  MANAGE_MARKETING
+  VIEW_CUSTOMER_DATA
+}
+
+enum OrganizationType {
+  CORPORATION
+  COMPANY
+  DEPARTMENT
+}
+
+enum UserZone {
+  USER
+  BUSINESS
+  WORKFORCE
+}
+
+// ---------- USER & PAYMENT & SOCIAL ----------
+
+model User {
+  id               String       @id
+  userId           String? // Custom login identifier/Staff ID
+  firebaseUid      String?
+  fullName         String
+  email            String       @unique
+  password         String? // Hashed password
+  tokenVersion     Int? // For session invalidation
+  twoFactorEnabled Boolean      @default(false)
+  twoFactorSecret  String?
+  phone            String?
+  avatar           String?
+  address          String?
+  joinDate         DateTime
+  balance          Decimal      @default(0) // Legacy balance
+  currency         CurrencyCode @default(VND)
+  referralCode     String?
+  referredBy       String?
+  role             String       @default("USER")
+  friendCount      Int?
+  isTermsConfirmed Boolean?
+  // Gamification
+  points           Int          @default(0)
+  tier             UserTier     @default(BRONZE)
+  reputation       Int          @default(0)
+
+  paymentMethods      PaymentMethod[]
+  follows             FollowRelation[]     @relation("UserFollows")
+  followedBy          FollowRelation[]     @relation("UserFollowedBy")
+  reviews             Review[]
+  feedPosts           FeedPost[]
+  transactions        Transaction[]
+  orders              Order[]
+  cartItems           CartItem[]
+  livestreams         LiveStream[]
+  productBases        ProductBase[]
+  bids                Bid[]
+  aiTasks             AITask[]
+  userWallet          UserWallet?
+  aiSubscription      AISubscription?
+  aiUsage             AIUsageStats?
+  badges              UserBadge[]
+  vouchers            Voucher[]
+  dailyTasks          UserTask[]
+  socialAccounts      SocialAccount[]
+  timeRecords         TimeRecord[]
+  storeStaff          StoreStaff[]
+  shareholders        Shareholder[]
+  employees           Employee[]
+  suppliers           Supplier[]
+  rawMaterials        RawMaterial[]
+  purchaseInvoices    PurchaseInvoice[]
+  laborCosts          LaborCost[]
+  profitDistributions ProfitDistribution[]
+  emailTemplates      EmailTemplate[]
+  escrowItems         EscrowItem[]
+  walletTransactions  WalletTransaction[]
+  blockchainConfig    Json? // Blockchain configuration (contract addresses, RPC URLs, etc.)
+  userVouchers        UserVoucher[]
+  corporations        Corporation[]
+  physicalStores      PhysicalStore[]
+
+  @@index([fullName])
+  @@index([phone])
+  @@index([role])
+  @@index([email])
+  @@index([joinDate])
+  @@index([tier])
+  @@index([points])
+}
+
+model PaymentMethod {
+  id            String   @id
+  user          User?    @relation(fields: [userId], references: [id])
+  userId        String?
+  type          String
+  providerName  String
+  accountNumber String
+  holderName    String
+  isDefault     Boolean  @default(false)
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  orders Order[]
+}
+
+model FollowRelation {
+  follower    User     @relation("UserFollows", fields: [followerId], references: [id])
+  followerId  String
+  following   User     @relation("UserFollowedBy", fields: [followingId], references: [id])
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+  @@index([createdAt])
+}
+
+// ---------- PRODUCT BASE / FIXED / AUCTION ----------
+
+model ProductBase {
+  id          String      @id
+  title       String
+  description String
+  image       String
+  category    String
+  rating      Decimal     @default(0)
+  reviewCount Int         @default(0)
+  seller      User?       @relation(fields: [sellerId], references: [id])
+  sellerId    String?
+  status      OrderStatus
+  stock       Int?
+  sold        Int?
+  videoUrl    String?
+  unit        String?
+  currency    String?
+
+  // Affiliate
+  isAffiliate    Boolean  @default(false)
+  affiliateLink  String?
+  platformName   String?
+  commissionRate Decimal?
+
+  // Pricing engine
+  costPrice         Decimal?
+  totalStock        Int?
+  breakEvenQuantity Int?
+  pricingStrategy   String?
+  isRecoveryPhase   Boolean?
+  systemFeeRate     Decimal? @default(0.05)
+
+  // Flash sale
+  isFlashSale      Boolean   @default(false)
+  flashSalePrice   Decimal?
+  flashSaleEndTime DateTime?
+
+  // Store Integration
+  storeId        String?
+  menuItemId     String?
+  specialTaxRate Decimal?
+  vatRate        Decimal?
+
+  // AI Sales Assistant Fields
+  minNegotiationPrice Decimal?
+  isNegotiable        Boolean?
+  privacyMode         Boolean?
+  salesAssistantTone  String?
+
+  // AI Order Classification
+  aiPriority String?
+  aiTags     String[]
+  soldDate   DateTime?
+
+  // Fraud Detection
+  isFraudulent Boolean?
+  fraudReason  String?
+  barcode      String?
+
+  fixedProduct    ProductFixed?
+  auctionProduct  ProductAuction?
+  reviews         Review[]
+  feedPosts       FeedPost[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  transactions    Transaction[]
+  shippingInfo    ShippingInfo?   @relation(fields: [shippingInfoId], references: [id])
+  packagingInfo   PackagingInfo?  @relation(fields: [packagingInfoId], references: [id])
+  shippingInfoId  String?
+  packagingInfoId String?
+  trackingInfo    TrackingInfo?   @relation(fields: [trackingInfoId], references: [id])
+  trackingInfoId  String?
+
+  @@index([category])
+  @@index([sellerId])
+  @@index([status])
+  @@index([rating])
+  @@index([isFlashSale])
+  @@index([flashSaleEndTime])
+  @@index([storeId])
+  @@index([barcode])
+  @@index([aiPriority])
+  @@index([title(ops: raw("gin_trgm_ops"))], map: "idx_product_title_trgm", type: Gin)
+}
+
+model ProductFixed {
+  product       ProductBase @relation(fields: [productId], references: [id])
+  productId     String      @id
+  price         Decimal
+  originalPrice Decimal?
+
+  @@index([price])
+}
+
+model ProductAuction {
+  product       ProductBase @relation(fields: [productId], references: [id])
+  productId     String      @id
+  startingPrice Decimal
+  currentBid    Decimal?
+  bidCount      Int?
+  stepPrice     Decimal?
+  endTime       DateTime
+
+  bids Bid[]
+
+  @@index([endTime])
+  @@index([currentBid])
+  @@index([bidCount])
+}
+
+model Bid {
+  id        String         @id
+  product   ProductAuction @relation(fields: [productId], references: [productId])
+  productId String
+  user      User?          @relation(fields: [userId], references: [id])
+  userId    String?
+  userName  String
+  amount    Decimal
+  timestamp DateTime
+  autoBid   Boolean        @default(false)
+
+  @@index([productId])
+  @@index([timestamp])
+  @@index([amount])
+}
+
+// ---------- REVIEW / FEED / CART / ORDER / TRANSACTION ----------
+
+model Review {
+  id              String         @id
+  product         ProductBase    @relation(fields: [productId], references: [id])
+  productId       String
+  user            User?          @relation(fields: [userId], references: [id])
+  userId          String?
+  userName        String
+  userAvatar      String
+  rating          Int
+  comment         String
+  images          String[]
+  likes           Int            @default(0)
+  helpfulVotes    Int            @default(0)
+  createdAt       DateTime       @default(now())
+  physicalStore   PhysicalStore? @relation(fields: [physicalStoreId], references: [id])
+  physicalStoreId String?
+
+  @@index([productId])
+  @@index([userId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+model FeedPost {
+  id               String       @id
+  user             User?        @relation(fields: [userId], references: [id])
+  userId           String?
+  content          String
+  images           String[]
+  relatedProduct   ProductBase? @relation(fields: [relatedProductId], references: [id])
+  relatedProductId String?
+  likes            Int          @default(0)
+  comments         Int          @default(0)
+  createdAt        DateTime     @default(now())
+
+  @@index([userId])
+  @@index([relatedProductId])
+  @@index([createdAt])
+}
+
+model CartItem {
+  id         String      @id
+  user       User?       @relation(fields: [userId], references: [id])
+  userId     String?
+  product    ProductBase @relation(fields: [productId], references: [id])
+  productId  String
+  title      String
+  image      String
+  type       ItemType
+  quantity   Int
+  priceAtAdd Decimal
+  variant    String?
+
+  @@index([userId])
+  @@index([productId])
+}
+
+model Order {
+  id              String        @id
+  user            User?         @relation(fields: [userId], references: [id])
+  userId          String?
+  sellerId        String? // Primary seller ID (for POS/Direct sales)
+  storeId         String? // Store ID if applicable
+  isPOS           Boolean       @default(false) // Flag for POS orders
+  totalAmount     Decimal
+  currency        CurrencyCode
+  status          OrderStatus
+  createdAt       DateTime
+  shippingAddress String?
+  shippingFee     Decimal?
+  discountCode    String?
+  paymentMethodId String?
+  escrowStatus    String? // held, released, refunded
+  shippingInfo    ShippingInfo? @relation(fields: [shippingInfoId], references: [id])
+  isFraudulent    Boolean?
+  fraudReason     String?
+
+  items          OrderItem[]
+  paymentMethod  PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  shippingInfoId String?
+  trackingInfo   TrackingInfo?  @relation(fields: [trackingInfoId], references: [id])
+  trackingInfoId String?
+
+  @@index([userId])
+  @@index([sellerId])
+  @@index([storeId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([isPOS])
+}
+
+model OrderItem {
+  id        String      @id
+  order     Order       @relation(fields: [orderId], references: [id])
+  orderId   String
+  product   ProductBase @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int
+  price     Decimal
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Transaction {
+  id             String        @id
+  user           User?         @relation(fields: [userId], references: [id])
+  userId         String?
+  product        ProductBase?  @relation(fields: [productId], references: [id])
+  productId      String?
+  amount         Decimal
+  currency       CurrencyCode
+  type           String
+  feeAmount      Decimal?
+  timestamp      DateTime
+  status         String
+  shippingInfo   ShippingInfo? @relation(fields: [shippingInfoId], references: [id])
+  shippingInfoId String?
+
+  @@index([userId])
+  @@index([productId])
+  @@index([type])
+  @@index([status])
+  @@index([timestamp])
+}
+
+// ---------- AVATAR & ENVIRONMENT ----------
+
+model AvatarConfig {
+  id           String  @id
+  name         String
+  role         String
+  gender       String
+  voiceTone    String
+  image        String
+  idleVideo    String
+  talkingVideo String
+  singingVideo String?
+
+  livestreams LiveStream[]
+}
+
+model AvatarOutfit {
+  id    String @id
+  name  String
+  image String
+  style String
+}
+
+model AvatarEnvironment {
+  id             String  @id
+  name           String
+  image          String
+  type           String
+  lightingColor  String
+  cameraPosition Float[]
+  modelPosition  Float[]
+  modelScale     Float?
+}
+
+// ---------- LIVESTREAM ----------
+
+model LiveStream {
+  id                 String        @id
+  title              String
+  viewerCount        Int
+  hostName           String
+  hostAvatar         String
+  thumbnail          String
+  featuredProductIds String[]
+  isLive             Boolean
+  avatar             AvatarConfig? @relation(fields: [avatarId], references: [id])
+  avatarId           String?
+  scriptAI           String?
+
+  host      User?    @relation(fields: [hostId], references: [id])
+  hostId    String?
+  createdAt DateTime @default(now())
+
+  @@index([hostId])
+  @@index([avatarId])
+  @@index([isLive])
+  @@index([createdAt])
+}
+
+// ---------- AI CONTENT ----------
+
+model ContentPost {
+  id              String   @id
+  title           String
+  content         String
+  keywords        String[]
+  generatedImages String[]
+  generatedVideo  String?
+  status          String
+  platform        String
+  createdAt       DateTime
+  aiModelUsed     String?
+
+  @@index([platform])
+  @@index([status])
+  @@index([createdAt])
+  @@index([aiModelUsed])
+}
+
+// ---------- AI TASK SYSTEM ----------
+
+model AITask {
+  id        String       @id
+  type      AITaskType
+  status    AITaskStatus @default(PENDING)
+  priority  Int          @default(5)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // JSON fields
+  input        Json
+  outputRaw    Json?
+  outputFinal  Json?
+  errorMessage String?
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  logs   AITaskLog[]
+  usages AIModelUsage[]
+}
+
+model AITaskLog {
+  id        String   @id
+  task      AITask   @relation(fields: [taskId], references: [id])
+  taskId    String
+  timestamp DateTime @default(now())
+  message   String
+  level     LogLevel @default(INFO)
+}
+
+model AIModelUsage {
+  id           String   @id
+  task         AITask   @relation(fields: [taskId], references: [id])
+  taskId       String
+  modelName    String
+  tokensInput  Int
+  tokensOutput Int
+  cost         Decimal
+  timestamp    DateTime @default(now())
+
+  @@index([modelName])
+  @@index([timestamp])
+}
+
+// ---------- WALLET & ESCROW SYSTEM ----------
+
+model UserWallet {
+  id             String   @id
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  balance        Decimal  @default(0)
+  pendingBalance Decimal  @default(0)
+  bankName       String?
+  bankAccount    String?
+  accountName    String?
+  kycStatus      String   @default("unverified")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  escrowItems    EscrowItem[]
+  transactions   WalletTransaction[]
+  systemWallet   SystemWallet?       @relation(fields: [systemWalletId], references: [id])
+  systemWalletId String?
+
+  @@index([userId])
+  @@index([kycStatus])
+}
+
+model EscrowItem {
+  id                  String   @id
+  orderId             String
+  user                User     @relation(fields: [userId], references: [id], map: "EscrowItem_userId_fkey")
+  userId              String
+  amount              Decimal
+  expectedReleaseDate DateTime
+  status              String   @default("HELD")
+  productName         String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  userWallet UserWallet @relation(fields: [userId], references: [id], map: "EscrowItem_userWalletId_fkey")
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@index([expectedReleaseDate])
+}
+
+model WalletTransaction {
+  id             String        @id
+  user           User          @relation(fields: [userId], references: [id], map: "WalletTransaction_userId_fkey")
+  userId         String
+  type           String
+  amount         Decimal
+  status         String        @default("PENDING")
+  timestamp      DateTime      @default(now())
+  description    String
+  userWallet     UserWallet    @relation(fields: [userId], references: [id], map: "WalletTransaction_userWalletId_fkey")
+  systemWallet   SystemWallet? @relation(fields: [systemWalletId], references: [id])
+  systemWalletId String?
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([timestamp])
+}
+
+model SystemWallet {
+  id                  String    @id
+  balance             Decimal   @default(0)
+  totalRevenue        Decimal   @default(0)
+  totalFeesCollected  Decimal   @default(0)
+  lastWithdrawalDate  DateTime?
+  withdrawalLimitRate Decimal   @default(0.25)
+  bankName            String?
+  bankAccount         String?
+  accountName         String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  userWallets  UserWallet[]
+  transactions WalletTransaction[]
+
+  @@index([createdAt])
+}
+
+// ---------- AI SUBSCRIPTION & USAGE ----------
+
+model AISubscription {
+  id         String             @id
+  userId     String             @unique
+  user       User               @relation(fields: [userId], references: [id])
+  tier       AISubscriptionTier @default(FREE)
+  startDate  DateTime
+  expiryDate DateTime?
+  autoRenew  Boolean            @default(true)
+  priceMonth Decimal
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([tier])
+  @@index([expiryDate])
+}
+
+model AIUsageStats {
+  id               String   @id
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+  totalTokens      Int      @default(0)
+  totalRequests    Int      @default(0)
+  remainingCredits Int?
+  lastRequestDate  DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  usageHistory AIUsageHistory[]
+
+  @@index([userId])
+  @@index([totalRequests])
+}
+
+model AIUsageHistory {
+  id           String       @id
+  usageStats   AIUsageStats @relation(fields: [usageStatsId], references: [id])
+  usageStatsId String
+  date         DateTime     @default(now())
+  tokens       Int
+  type         String
+  cost         Decimal?
+
+  @@index([usageStatsId])
+  @@index([date])
+  @@index([type])
+}
+
+// ---------- GAMIFICATION ----------
+
+model Voucher {
+  id             String   @id
+  code           String   @unique
+  discount       Decimal
+  type           String
+  minPurchase    Decimal
+  pointsRequired Int
+  expiryDate     DateTime
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  userVouchers UserVoucher[]
+  user         User?         @relation(fields: [userId], references: [id])
+  userId       String?
+
+  @@index([code])
+  @@index([expiryDate])
+  @@index([isActive])
+}
+
+model UserVoucher {
+  id        String    @id
+  userId    String
+  voucherId String
+  isUsed    Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  voucher Voucher @relation(fields: [voucherId], references: [id])
+
+  @@unique([userId, voucherId])
+  @@index([userId])
+  @@index([isUsed])
+}
+
+model Badge {
+  id          String @id
+  name        String @unique
+  description String
+  icon        String
+  category    String
+  points      Int    @default(0)
+
+  userBadges UserBadge[]
+}
+
+model UserBadge {
+  id       String   @id
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  badge Badge @relation(fields: [badgeId], references: [id])
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model Task {
+  id          String  @id
+  title       String
+  description String
+  points      Int
+  type        String
+  isActive    Boolean @default(true)
+
+  userTasks UserTask[]
+}
+
+model UserTask {
+  id          String    @id
+  userId      String
+  taskId      String
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@unique([userId, taskId])
+  @@index([userId])
+}
+
+// ---------- SOCIAL ACCOUNTS ----------
+
+model SocialAccount {
+  id        String   @id
+  userId    String
+  provider  String
+  connected Boolean  @default(false)
+  username  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, provider])
+  @@index([userId])
+}
+
+// ---------- DISCOUNT & SHIPPING ----------
+
+model DiscountCode {
+  id          String   @id
+  code        String   @unique
+  type        String
+  value       Decimal
+  minPurchase Decimal?
+  maxDiscount Decimal?
+  expiryDate  DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([code])
+  @@index([expiryDate])
+  @@index([isActive])
+}
+
+model ShippingOption {
+  id            String   @id
+  name          String
+  provider      String
+  estimatedDays String
+  price         Decimal
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([provider])
+  @@index([isActive])
+}
+
+model TrackingEvent {
+  id          String   @id
+  trackingId  String
+  status      String
+  location    String
+  timestamp   DateTime @default(now())
+  description String
+
+  trackingInfo TrackingInfo @relation(fields: [trackingId], references: [id])
+
+  @@index([trackingId])
+  @@index([timestamp])
+}
+
+model TrackingInfo {
+  id                String    @id
+  trackingNumber    String    @unique
+  carrier           String
+  status            String
+  estimatedDelivery DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  events       TrackingEvent[]
+  productBases ProductBase[]
+  orders       Order[]
+
+  @@index([trackingNumber])
+  @@index([carrier])
+  @@index([status])
+}
+
+model ShippingInfo {
+  id             String    @id
+  carrier        String?
+  trackingNumber String?
+  address        String?
+  city           String?
+  postalCode     String?
+  country        String?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  orders       Order[]
+  transactions Transaction[]
+  productBases ProductBase[]
+
+  @@index([trackingNumber])
+  @@index([carrier])
+}
+
+model PackagingInfo {
+  id        String   @id
+  length    Decimal // cm
+  width     Decimal // cm
+  height    Decimal // cm
+  weight    Decimal // kg
+  isFragile Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  productBases ProductBase[]
+
+  @@index([isFragile])
+  @@index([weight])
+}
+
+// ---------- ORGANIZATION & STAFF MANAGEMENT ----------
+
+model TimeRecord {
+  id           String      @id
+  staffId      String
+  type         String
+  timestamp    DateTime    @default(now())
+  location     Json?
+  method       String
+  storeId      String
+  user         User        @relation(fields: [userId], references: [id])
+  userId       String
+  storeStaff   StoreStaff? @relation(fields: [storeStaffId], references: [id])
+  storeStaffId String?
+
+  @@index([staffId])
+  @@index([storeId])
+  @@index([timestamp])
+}
+
+model Corporation {
+  id          String   @id
+  ownerId     String
+  name        String
+  description String?
+  taxCode     String?
+  address     String?
+  logo        String?
+  createdAt   DateTime @default(now())
+  status      String   @default("ACTIVE")
+  settings    Json?
+
+  branches    Branch[]
+  departments Department[]
+  stores      PhysicalStore[]
+  user        User            @relation(fields: [ownerId], references: [id])
+
+  @@index([ownerId])
+  @@index([status])
+}
+
+model Branch {
+  id              String   @id
+  corporationId   String
+  managerId       String?
+  name            String
+  address         String
+  phone           String
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  area            Decimal?
+  services        String[]
+  perks           String[]
+  recruitmentInfo String?
+  parkingInfo     String?
+  images          String[]
+
+  corporation Corporation     @relation(fields: [corporationId], references: [id])
+  departments Department[]
+  stores      PhysicalStore[]
+
+  @@index([corporationId])
+  @@index([status])
+}
+
+model Department {
+  id            String   @id
+  corporationId String
+  branchId      String?
+  name          String
+  managerId     String?
+  description   String?
+  createdAt     DateTime @default(now())
+
+  corporation Corporation @relation(fields: [corporationId], references: [id])
+  branch      Branch?     @relation(fields: [branchId], references: [id])
+
+  @@index([corporationId])
+  @@index([branchId])
+}
+
+model StoreStaff {
+  id            String            @id
+  userId        String
+  password      String?
+  name          String
+  email         String
+  role          StaffRole
+  position      String?
+  departmentId  String?
+  storeId       String
+  corporationId String?
+  permissions   StaffPermission[]
+  status        String            @default("ACTIVE")
+  joinDate      DateTime
+  baseSalary    Decimal?
+  kpiScore      Decimal?
+  overtimeHours Int?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id])
+  timeRecords TimeRecord[]
+  store       PhysicalStore @relation(fields: [storeId], references: [id])
+
+  @@index([userId])
+  @@index([storeId])
+  @@index([role])
+  @@index([status])
+}
+
+model PhysicalStore {
+  id               String           @id
+  ownerId          String
+  parentId         String?
+  type             OrganizationType
+  name             String
+  description      String
+  address          String
+  latitude         Float
+  longitude        Float
+  category         String
+  images           String[]
+  openingHours     String
+  rating           Decimal          @default(0)
+  reviewCount      Int              @default(0)
+  qrCode           String?
+  createdAt        DateTime         @default(now())
+  staffIds         String[]
+  organizationPath String?
+  area             Decimal?
+  services         String[]
+  perks            String[]
+  recruitmentInfo  String?
+  parkingInfo      String?
+  structureDiagram String?
+  corporationId    String?
+  branchId         String?
+
+  user        User            @relation(fields: [ownerId], references: [id])
+  corporation Corporation?    @relation(fields: [corporationId], references: [id])
+  branch      Branch?         @relation(fields: [branchId], references: [id])
+  staff       StoreStaff[]
+  menuItems   StoreMenuItem[]
+  reviews     Review[]
+  jobPostings JobPosting[]
+
+  @@index([ownerId])
+  @@index([corporationId])
+  @@index([branchId])
+  @@index([category])
+  @@index([rating])
+}
+
+model StoreMenuItem {
+  id             String   @id
+  storeId        String
+  name           String
+  description    String
+  price          Decimal
+  image          String
+  category       String
+  isAvailable    Boolean  @default(true)
+  barcode        String?
+  vatRate        Decimal?
+  specialTaxRate Decimal?
+  recipe         Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  store PhysicalStore @relation(fields: [storeId], references: [id])
+
+  @@index([storeId])
+  @@index([category])
+  @@index([isAvailable])
+}
+
+model JobPosting {
+  id           String   @id
+  storeId      String
+  title        String
+  type         String
+  salary       String
+  description  String
+  requirements String[]
+  status       String   @default("OPEN")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  store PhysicalStore @relation(fields: [storeId], references: [id])
+
+  @@index([storeId])
+  @@index([status])
+}
+
+// ---------- SUPPLY CHAIN MANAGEMENT ----------
+
+model Supplier {
+  id            String   @id
+  ownerId       String
+  name          String
+  contactPerson String
+  phone         String
+  email         String?
+  address       String?
+  website       String?
+  rating        Decimal?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user         User              @relation(fields: [ownerId], references: [id])
+  rawMaterials RawMaterial[]
+  invoices     PurchaseInvoice[]
+
+  @@index([ownerId])
+  @@index([rating])
+}
+
+model RawMaterial {
+  id               String    @id
+  ownerId          String
+  name             String
+  category         String
+  unit             String
+  costPrice        Decimal
+  currency         String
+  supplierId       String
+  stock            Decimal
+  minStockAlert    Decimal
+  lastPurchaseDate DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user         User                  @relation(fields: [ownerId], references: [id])
+  supplier     Supplier              @relation(fields: [supplierId], references: [id])
+  invoiceItems PurchaseInvoiceItem[]
+
+  @@index([ownerId])
+  @@index([supplierId])
+  @@index([category])
+}
+
+model PurchaseInvoice {
+  id            String   @id
+  ownerId       String
+  supplierId    String
+  totalAmount   Decimal
+  currency      String
+  invoiceDate   DateTime
+  status        String   @default("PENDING")
+  imageUrl      String?
+  invoiceType   String
+  purpose       String
+  requesterName String
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user     User                  @relation(fields: [ownerId], references: [id])
+  supplier Supplier              @relation(fields: [supplierId], references: [id])
+  items    PurchaseInvoiceItem[]
+
+  @@index([ownerId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([invoiceDate])
+}
+
+model PurchaseInvoiceItem {
+  id           String   @id
+  invoiceId    String
+  materialId   String
+  materialName String
+  quantity     Decimal
+  unitPrice    Decimal
+  currency     String
+  createdAt    DateTime @default(now())
+
+  invoice     PurchaseInvoice @relation(fields: [invoiceId], references: [id])
+  rawMaterial RawMaterial     @relation(fields: [materialId], references: [id])
+
+  @@index([invoiceId])
+  @@index([materialId])
+}
+
+// ---------- LABOR & HR MANAGEMENT ----------
+
+model Employee {
+  id                      String   @id
+  ownerId                 String
+  name                    String
+  role                    String
+  phone                   String
+  email                   String?
+  salaryBase              Decimal
+  salaryType              String
+  allowanceLunch          Decimal
+  allowanceTravel         Decimal
+  allowancePhone          Decimal
+  allowanceResponsibility Decimal?
+  allowanceUniform        Decimal?
+  allowanceHousing        Decimal?
+  allowanceOther          Decimal
+  bonusStandard           Decimal
+  bonusKPI                Decimal?
+  bonusTet                Decimal?
+  insuranceSocial         Decimal?
+  insuranceHealth         Decimal?
+  insuranceUnemployment   Decimal?
+  insuranceContribution   Decimal
+  taxCode                 String
+  bankAccount             String
+  bankName                String
+  bankBranch              String?
+  joinDate                DateTime
+  status                  String   @default("ACTIVE")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  user       User        @relation(fields: [ownerId], references: [id])
+  laborCosts LaborCost[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([joinDate])
+}
+
+model LaborCost {
+  id         String   @id
+  ownerId    String
+  employeeId String
+  amount     Decimal
+  date       DateTime
+  type       String
+  note       String?
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [ownerId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([ownerId])
+  @@index([employeeId])
+  @@index([date])
+  @@index([type])
+}
+
+// ---------- EQUITY & SHAREHOLDER MANAGEMENT ----------
+
+model Shareholder {
+  id                         String    @id
+  ownerId                    String
+  name                       String
+  capitalContribution        Decimal // Cash
+  assetContributionValue     Decimal?
+  assetDetails               String?
+  assetValueAtAddition       Decimal?
+  assetUsefulLife            Int?
+  laborContributionValue     Decimal?
+  laborDetails               String?
+  laborMarketSalary          Decimal?
+  laborActualSalary          Decimal?
+  laborMonths                Int?
+  laborMultiplier            Decimal?
+  coreValueContributionValue Decimal?
+  coreValueDetails           String?
+  coreValueBrand             Decimal?
+  coreValueIP                Decimal?
+  coreValueNetwork           Decimal?
+  sharePercentage            Decimal
+  joinDate                   DateTime
+  role                       String
+  group                      String
+  status                     String    @default("ACTIVE")
+  exitDate                   DateTime?
+  exitValue                  Decimal?
+  exitNote                   String?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  user                User                     @relation(fields: [ownerId], references: [id])
+  profitDistributions ProfitDistributionItem[]
+
+  @@index([ownerId])
+  @@index([group])
+  @@index([status])
+  @@index([joinDate])
+}
+
+model ProfitDistribution {
+  id                String   @id
+  ownerId           String
+  totalProfit       Decimal
+  reserveFund       Decimal
+  salaryFund        Decimal
+  bonusFund         Decimal
+  devFund           Decimal
+  totalFunds        Decimal
+  netProfit         Decimal
+  distributedAmount Decimal
+  retainedAmount    Decimal
+  period            String
+  createdAt         DateTime @default(now())
+
+  user          User                     @relation(fields: [ownerId], references: [id])
+  distributions ProfitDistributionItem[]
+
+  @@index([ownerId])
+  @@index([period])
+}
+
+model ProfitDistributionItem {
+  id                   String   @id
+  profitDistributionId String
+  shareholderId        String
+  amount               Decimal
+  createdAt            DateTime @default(now())
+
+  profitDistribution ProfitDistribution @relation(fields: [profitDistributionId], references: [id])
+  shareholder        Shareholder        @relation(fields: [shareholderId], references: [id])
+
+  @@index([profitDistributionId])
+  @@index([shareholderId])
+}
+
+// ---------- CONFIGURATION & TEMPLATES ----------
+
+model GlobalConfig {
+  id                    String   @id
+  platformFeeRate       Decimal
+  defaultVatRate        Decimal
+  personalIncomeTaxRate Decimal
+  currencySymbol        String
+  maxWithdrawalRate     Decimal?
+  aiEnabled             Boolean?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model EmailTemplate {
+  id           String   @id
+  name         String?
+  subject      String
+  to           String
+  type         String
+  isRead       Boolean  @default(false)
+  timestamp    DateTime @default(now())
+  htmlContent  String
+  lastModified DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+
+  @@index([userId])
+  @@index([type])
+  @@index([timestamp])
+}
+
+// ---------- ANALYTICS & STATISTICS ----------
+// Optimized for millions of records with partitioning strategy
+
+model UserAnalytics {
+  id            String    @id
+  userId        String
+  date          DateTime // YYYY-MM-DD format for partitioning
+  totalOrders   Int       @default(0)
+  totalSpent    Decimal   @default(0)
+  totalItems    Int       @default(0)
+  avgOrderValue Decimal   @default(0)
+  lastActiveAt  DateTime?
+  createdAt     DateTime  @default(now())
+
+  // Composite primary key for better performance
+  @@unique([userId, date])
+  @@index([date])
+  @@index([totalSpent])
+  @@index([totalOrders])
+}
+
+model ProductAnalytics {
+  id             String   @id
+  productId      String
+  date           DateTime // YYYY-MM-DD format for partitioning
+  totalViews     Int      @default(0)
+  totalOrders    Int      @default(0)
+  totalRevenue   Decimal  @default(0)
+  conversionRate Decimal  @default(0)
+  avgRating      Decimal?
+  stockLevel     Int?
+  createdAt      DateTime @default(now())
+
+  // Composite primary key for better performance
+  @@unique([productId, date])
+  @@index([date])
+  @@index([totalRevenue])
+  @@index([totalOrders])
+}
+
+model SalesAnalytics {
+  id              String   @id
+  date            DateTime // YYYY-MM-DD format for partitioning
+  storeId         String?
+  totalOrders     Int      @default(0)
+  totalRevenue    Decimal  @default(0)
+  totalProfit     Decimal  @default(0)
+  avgOrderValue   Decimal  @default(0)
+  uniqueCustomers Int      @default(0)
+  itemsSold       Int      @default(0)
+  returnedOrders  Int      @default(0)
+  refundsAmount   Decimal  @default(0)
+  createdAt       DateTime @default(now())
+
+  // Composite primary key for better performance
+  @@unique([date, storeId])
+  @@index([date])
+  @@index([storeId])
+  @@index([totalRevenue])
+}
+
+model CategoryAnalytics {
+  id             String   @id
+  category       String
+  date           DateTime // YYYY-MM-DD format for partitioning
+  totalViews     Int      @default(0)
+  totalOrders    Int      @default(0)
+  totalRevenue   Decimal  @default(0)
+  avgPrice       Decimal  @default(0)
+  productCount   Int      @default(0)
+  conversionRate Decimal  @default(0)
+  createdAt      DateTime @default(now())
+
+  // Composite primary key for better performance
+  @@unique([category, date])
+  @@index([date])
+  @@index([totalRevenue])
+  @@index([totalOrders])
+}
+
+model SystemMetrics {
+  id          String   @id
+  timestamp   DateTime @default(now())
+  metricName  String
+  metricValue Decimal
+  metricType  String // COUNTER, GAUGE, HISTOGRAM
+  tags        Json? // Key-value pairs for filtering
+  createdAt   DateTime @default(now())
+
+  // Time-series optimized indexes
+  @@index([timestamp])
+  @@index([metricName])
+  @@index([metricType])
+}
+
+model UserSession {
+  id          String    @id
+  userId      String?
+  sessionId   String    @unique
+  startTime   DateTime  @default(now())
+  endTime     DateTime?
+  duration    Int? // in seconds
+  deviceType  String?
+  browser     String?
+  os          String?
+  ipAddress   String?
+  userAgent   String?
+  referrer    String?
+  landingPage String?
+  exitPage    String?
+  pageViews   Int       @default(0)
+  events      Json? // Session events as JSON
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([startTime])
+  @@index([deviceType])
+}
+
+model PopularSearch {
+  id               String   @id
+  query            String
+  searchCount      Int      @default(1)
+  lastSearched     DateTime @default(now())
+  resultCount      Int?
+  clickThroughRate Decimal  @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([query])
+  @@index([searchCount])
+  @@index([lastSearched])
+}
+
+model UserBehaviorEvent {
+  id         String   @id
+  userId     String?
+  sessionId  String?
+  eventType  String // VIEW, CLICK, ADD_TO_CART, PURCHASE, etc.
+  eventName  String
+  properties Json? // Event-specific data
+  timestamp  DateTime @default(now())
+  url        String?
+  referrer   String?
+  userAgent  String?
+  ipAddress  String?
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([timestamp])
+  @@index([eventType])
+}

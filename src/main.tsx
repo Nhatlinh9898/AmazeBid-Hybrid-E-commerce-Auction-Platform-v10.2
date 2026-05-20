@@ -1,0 +1,55 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import AppRouter from './AppRouter';
+import { AuthProvider } from '../context/AuthProvider';
+import { WorkSessionProvider } from '../context/WorkSessionContext';
+import './index.css';
+import { testConnection } from './services/firebaseUtils';
+
+// Test Firebase connection on boot
+testConnection();
+
+const container = document.getElementById('root');
+
+if (container) {
+  const root = createRoot(container);
+  
+  // Simple Error Boundary
+  class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+    constructor(props: any) {
+      super(props);
+      this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error: any) {
+      return { hasError: true, error };
+    }
+    componentDidCatch(error: any, errorInfo: any) {
+      console.error("App Error:", error, errorInfo);
+    }
+    render() {
+      if (this.state.hasError) {
+        return (
+          <div style={{ padding: '20px', color: 'red', background: '#fff' }}>
+            <h1>Something went wrong.</h1>
+            <pre>{this.state.error?.toString()}</pre>
+          </div>
+        );
+      }
+      return this.props.children;
+    }
+  }
+
+  root.render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <AuthProvider>
+          <WorkSessionProvider>
+            <AppRouter />
+          </WorkSessionProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+} else {
+  console.error("Failed to find the root element");
+}

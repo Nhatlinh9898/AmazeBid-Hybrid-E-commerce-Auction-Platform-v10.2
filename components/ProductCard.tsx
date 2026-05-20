@@ -1,0 +1,246 @@
+
+import React, { useState, useEffect } from 'react';
+import { Star, Clock, Gavel, ShoppingCart, ExternalLink, Link2, Smartphone, MessageSquare, ShieldAlert, X, Sparkles } from 'lucide-react';
+import { Product, ItemType } from '../types';
+import ARTryOnModal from './ARTryOnModal';
+import { AISalesAssistant } from './AISalesAssistant';
+import { AuctionCore } from '../services/dataProcessingService';
+
+interface ProductCardProps {
+  product: Product;
+  sellerName?: string;
+  sellerAvatar?: string;
+  onAddToCart: (p: Product) => void;
+  onPlaceBid: (p: Product) => void;
+  onChatWithSeller?: (sellerId: string, sellerName: string, sellerAvatar: string) => void;
+}
+
+const ProductCard: React.FC<ProductCardProps> = ({ product, sellerName, sellerAvatar, onAddToCart, onPlaceBid, onChatWithSeller }) => {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [auctionStatus, setAuctionStatus] = useState<'UPCOMING' | 'LIVE' | 'ENDED' | 'NONE'>('NONE');
+  const [isARModalOpen, setIsARModalOpen] = useState(false);
+  const [isNegotiationOpen, setIsNegotiationOpen] = useState(false);
+
+  useEffect(() => {
+    if (product.type === ItemType.AUCTION) {
+      const timer = setInterval(() => {
+        const now = new Date().getTime();
+        const start = product.startTime ? new Date(product.startTime).getTime() : now;
+        const end = product.endTime ? new Date(product.endTime).getTime() : 0;
+
+        if (now < start) {
+          setAuctionStatus('UPCOMING');
+          const result = AuctionCore.getTimeRemaining(product.startTime!);
+          setTimeLeft(result.label);
+        } else if (now < end) {
+          setAuctionStatus('LIVE');
+          const result = AuctionCore.getTimeRemaining(product.endTime!);
+          setTimeLeft(result.label);
+        } else {
+          setAuctionStatus('ENDED');
+          setTimeLeft('Kết thúc');
+          clearInterval(timer);
+        }
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [product]);
+
+  const handleAction = () => {
+    if (product.isAffiliate && product.affiliateLink) {
+        window.open(product.affiliateLink, '_blank');
+    } else if (product.type === ItemType.FIXED_PRICE) {
+        onAddToCart(product);
+    } else {
+        onPlaceBid(product);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded p-4 hover:shadow-lg transition-shadow flex flex-col group h-full">
+      <div className="relative overflow-hidden aspect-square mb-3 bg-gray-50 rounded">
+        <img 
+          src={product.image} 
+          alt={product.title} 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        {product.type === ItemType.AUCTION && (
+          <div className={`absolute top-2 left-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md ${auctionStatus === 'UPCOMING' ? 'bg-indigo-600' : 'bg-red-600 animate-pulse'}`}>
+            <Clock size={10} /> 
+            {auctionStatus === 'UPCOMING' ? 'CHỜ ĐẤU GIÁ' : 'ĐANG ĐẤU GIÁ'}
+          </div>
+        )}
+        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+          {product.isAffiliate && (
+            <div className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md">
+              <Link2 size={10} /> {product.platformName || 'Affiliate'}
+            </div>
+          )}
+          {product.privacyMode && (
+            <div className="bg-gray-800 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md">
+              <ShieldAlert size={10} /> Bảo mật
+            </div>
+          )}
+        </div>
+        
+        {/* AR Try-on Button */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); setIsARModalOpen(true); }}
+          className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm text-gray-800 text-[10px] font-bold px-2 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 translate-y-2 group-hover:translate-y-0"
+        >
+          <Smartphone size={12} /> Thử AR
+        </button>
+      </div>
+
+      <h3 className="text-sm font-medium text-gray-900 line-clamp-2 hover:text-orange-600 cursor-pointer mb-1 h-10 leading-tight">
+        {product.title}
+      </h3>
+
+      <div className="flex items-center mb-1">
+        <div className="flex items-center text-[#febd69]">
+          {[...Array(5)].map((_, i) => (
+            <Star key={i} size={14} fill={i < Math.floor(product.rating) ? 'currentColor' : 'none'} />
+          ))}
+        </div>
+        <span className="text-xs text-blue-600 ml-1 hover:text-orange-600 cursor-pointer">
+          {product.reviewCount.toLocaleString()}
+        </span>
+      </div>
+
+      <div className="mt-auto">
+        {/* Chat with Seller Button */}
+        {!product.isAffiliate && onChatWithSeller && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onChatWithSeller(product.sellerId, sellerName || 'Người bán', sellerAvatar || ''); }}
+            className="w-full mb-2 flex items-center justify-center gap-2 text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors py-1 border border-blue-100 rounded-lg hover:bg-blue-50"
+          >
+            <MessageSquare size={12} /> Chat với người bán
+          </button>
+        )}
+
+        {product.type === ItemType.FIXED_PRICE ? (
+          <div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-xs font-bold self-start mt-1">{product.currency === 'VND' ? 'đ' : '$'}</span>
+              <span className="text-xl font-bold">{Math.floor(product.price).toLocaleString()}</span>
+              {product.currency !== 'VND' && <span className="text-xs font-bold">{(product.price % 1).toFixed(2).substring(2)}</span>}
+              {product.unit && <span className="text-[10px] text-gray-500 font-medium whitespace-nowrap">/ {product.unit}</span>}
+            </div>
+            
+            {product.isAffiliate ? (
+                // Affiliate Action
+                <>
+                    <p className="text-xs text-blue-500 mb-4 truncate">
+                        Được bán bởi {product.platformName}
+                    </p>
+                    <button 
+                        onClick={handleAction}
+                        className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs py-2 rounded-full font-medium flex items-center justify-center gap-2 shadow-sm transition-colors"
+                    >
+                        <ExternalLink size={14} /> Mua tại {product.platformName || 'Shop'}
+                    </button>
+                </>
+            ) : (
+                // Normal Buy Action
+                <>
+                    <p className="text-xs text-gray-500 mb-4">Giao hàng miễn phí</p>
+                    <div className="flex flex-col gap-2">
+                        <button 
+                            onClick={handleAction}
+                            className="w-full bg-[#ffd814] hover:bg-[#f7ca00] text-black text-xs py-2 rounded-full font-medium flex items-center justify-center gap-2 shadow-sm"
+                        >
+                            <ShoppingCart size={14} /> Thêm vào giỏ
+                        </button>
+                        {product.isNegotiable && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setIsNegotiationOpen(true); }}
+                                className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs py-2 rounded-full font-bold flex items-center justify-center gap-2 shadow-sm transition-colors"
+                            >
+                                <Sparkles size={14} /> Mặc cả với AI
+                            </button>
+                        )}
+                    </div>
+                </>
+            )}
+          </div>
+        ) : (
+            // Auction Action
+          <div className="space-y-2">
+            <div className="flex justify-between items-end">
+              <div>
+                <p className="text-[9px] font-bold text-gray-500 uppercase">Giá hiện tại</p>
+                <div className="flex items-baseline gap-1 -mt-1">
+                  <span className="text-xs font-bold text-gray-400">{product.currency === 'VND' ? 'đ' : '$'}</span>
+                  <span className="text-xl font-bold text-[#131921]">
+                    {(product.currentBid || product.price).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] font-bold text-indigo-600 uppercase">
+                  {auctionStatus === 'UPCOMING' ? 'Mở sau' : auctionStatus === 'LIVE' ? 'Còn lại' : 'Trạng thái'}
+                </p>
+                <p className={`text-xs font-black ${auctionStatus === 'LIVE' ? 'text-red-600' : 'text-[#131921]'}`}>{timeLeft}</p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleAction}
+              disabled={auctionStatus === 'UPCOMING' || auctionStatus === 'ENDED'}
+              className={`w-full text-xs py-2 rounded-full font-bold flex items-center justify-center gap-2 shadow-sm transition-all ${
+                auctionStatus === 'UPCOMING' 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' 
+                  : auctionStatus === 'ENDED'
+                    ? 'bg-gray-800 text-white opacity-50 cursor-not-allowed'
+                    : 'bg-[#febd69] hover:bg-[#f3a847] text-black ring-2 ring-[#febd69] ring-offset-1'
+              }`}
+            >
+              <Gavel size={14} /> 
+              {auctionStatus === 'UPCOMING' ? 'CHỜ MỞ THẦU' : auctionStatus === 'ENDED' ? 'ĐÃ KẾT THÚC' : 'TRẢ GIÁ NGAY'}
+            </button>
+            <p className="text-[9px] text-center text-gray-400 font-medium">
+              {auctionStatus === 'UPCOMING' 
+                ? 'Sản phẩm đang trong giai đoạn thẩm định' 
+                : `${product.bidCount || 0} lượt trả giá`
+              }
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* AR Try-on Modal */}
+      <ARTryOnModal 
+        isOpen={isARModalOpen} 
+        onClose={() => setIsARModalOpen(false)} 
+        product={product} 
+      />
+
+      {/* AI Sales Assistant (Negotiation) */}
+      {isNegotiationOpen && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsNegotiationOpen(false)} />
+            <div className="relative w-full max-w-md">
+                <AISalesAssistant 
+                    product={product} 
+                    isFloating={false}
+                    isOpen={true}
+                    onClose={() => setIsNegotiationOpen(false)}
+                    onNegotiationSuccess={(finalPrice) => {
+                        // In a real app, we'd update the cart or product price for this user
+                        console.log('Negotiated price:', finalPrice);
+                    }}
+                />
+                <button 
+                    onClick={() => setIsNegotiationOpen(false)}
+                    className="absolute -top-12 right-0 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transition-colors"
+                >
+                    <X size={24} />
+                </button>
+            </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ProductCard;
