@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   Link as LinkIcon
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../src/services/api';
 import { motion, AnimatePresence } from 'motion/react';
 
 const SystemConfig: React.FC = () => {

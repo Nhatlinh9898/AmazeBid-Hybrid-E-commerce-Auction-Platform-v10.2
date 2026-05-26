@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Book, CreditCard, Package, Truck, RefreshCw, FileText, Scale, CheckCircle2, AlertTriangle, ShieldCheck, ChevronRight, MessageSquare, Send, Bot, User as UserIcon, Loader2, Sparkles } from 'lucide-react';
-import { customerServiceChat } from '../services/geminiService';
-import { api } from '../services/api';
+import { customerServiceChat } from '../src/services/geminiService';
+import { api } from '../src/services/api';
 import { Order, Message } from '../types';
 
 interface CustomerServiceModalProps {

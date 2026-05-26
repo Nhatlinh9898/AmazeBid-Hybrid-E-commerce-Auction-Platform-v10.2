@@ -1,7 +1,7 @@
 import { api } from './api';
 import { storeService } from './StoreService';
-import { supplyChainService } from '../src/services/SupplyChainService';
-import { OrderStatus, StoreMenuItem, RawMaterial } from '../types';
+import { supplyChainService } from './SupplyChainService';
+import { OrderStatus, StoreMenuItem, RawMaterial } from '../../types';
 
 export const marketplaceSyncService = {
   /**

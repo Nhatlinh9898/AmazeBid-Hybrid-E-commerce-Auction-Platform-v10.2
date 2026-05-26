@@ -4,7 +4,7 @@ import {
   Package, DollarSign, Tag, Loader2, Scan, Plus
 } from 'lucide-react';
 import { Product, OrderStatus } from '../types';
-import { api } from '../services/api';
+import { api } from '../src/services/api';
 import { useAuth } from '../context/useAuth';
 import BarcodeScanner from './BarcodeScanner';
 

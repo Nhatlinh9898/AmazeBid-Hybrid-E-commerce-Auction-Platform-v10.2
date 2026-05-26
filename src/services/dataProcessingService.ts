@@ -1,5 +1,5 @@
 
-import { Product, Bid, ItemType, OrderStatus, Order, Shareholder, ProfitDistribution, ProductRecipe, ProductIngredient } from '../types';
+import { Product, Bid, ItemType, OrderStatus, Order, Shareholder, ProfitDistribution, ProductRecipe, ProductIngredient } from '../../types';
 
 /**
  * AuctionCore handles logic related to bidding and auction states.

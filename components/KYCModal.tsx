@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, ShieldCheck, Upload, Camera, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { User } from '../types';
-import { emailService } from '../services/EmailService';
+import { emailService } from '../src/services/EmailService';
 
 interface KYCModalProps {
   isOpen: boolean;

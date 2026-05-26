@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Video, Sparkles, User, Play, Loader2, Share2, Wand2, Film, Mic, Package, Shirt, Save, Library, Image, Database, TrendingUp, BarChart, Users } from 'lucide-react';
-import { generateKOLGallery, generateStreamScript, generateStreamVideo, generateKOLOutfitGallery } from '../services/kolService';
+import { generateKOLGallery, generateStreamScript, generateStreamVideo, generateKOLOutfitGallery } from '../src/services/kolService';
 import { useAuth } from '../context/useAuth';
 import { Product, KnowledgeItem } from '../types';
 import { KnowledgeBaseManager } from './KnowledgeBaseManager';
-import { KOLAnalytics } from '../services/dataProcessingService';
+import { KOLAnalytics } from '../src/services/dataProcessingService';
 
 interface KOLStreamStudioProps {
   isOpen: boolean;

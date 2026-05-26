@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowDownCircle, ShieldCheck, History, X, AlertCircle, Users, Wallet, LayoutDashboard, ShieldAlert, Loader2, Settings, TrendingUp } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../src/services/api';
 import UserManagement from './UserManagement';
 import AdminVerification from './AdminVerification';
 import SecurityLogs from './SecurityLogs';

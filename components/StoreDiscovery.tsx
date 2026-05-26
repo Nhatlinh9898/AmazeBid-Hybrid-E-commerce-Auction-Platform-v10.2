@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Search, Star, Clock, ChevronRight, ChevronLeft, ChevronDown, Store as LucideStore, Utensils, ShoppingBag, Laptop, Sparkles, BookOpen, Wrench, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { storeService } from '../services/StoreService';
+import { storeService } from '../src/services/StoreService';
 import { PhysicalStore } from '../types';
 
 interface StoreDiscoveryProps {

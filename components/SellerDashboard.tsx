@@ -7,8 +7,8 @@ import { LaborManagement } from './LaborManagement';
 import { EquityManagement } from './EquityManagement';
 import ProductManagement from './ProductManagement';
 import SellerOrderManagement from './SellerOrderManagement';
-import InventoryDashboard from '../src/components/InventoryDashboard';
-import PackagingSuggestionComponent from '../src/components/PackagingSuggestion';
+import InventoryDashboard from './InventoryDashboard';
+import PackagingSuggestionComponent from './PackagingSuggestion';
 import { Product, OrderStatus, ItemType, PhysicalStore, Order, StaffPermission } from '../types';
 import WorkLoginDialog from './WorkLoginDialog';
 import { supplyChainService } from '../src/services/SupplyChainService';
@@ -16,12 +16,12 @@ import { equityService } from '../src/services/EquityService';
 import { localAnalyzeProfit } from '../src/services/inventoryService';
 import { useAuth } from '../context/useAuth';
 import { useWorkSession } from '../context/WorkSessionContext';
-import { storeService } from '../services/StoreService';
-import { configService } from '../services/ConfigService';
-import { api } from '../services/api';
+import { storeService } from '../src/services/StoreService';
+import { configService } from '../src/services/ConfigService';
+import { api } from '../src/services/api';
 import { GlobalConfig } from '../types';
 
-import { workforceService } from '../services/WorkforceService';
+import { workforceService } from '../src/services/WorkforceService';
 
 import { motion } from 'motion/react';
 import SentinelDashboard from './SentinelDashboard';

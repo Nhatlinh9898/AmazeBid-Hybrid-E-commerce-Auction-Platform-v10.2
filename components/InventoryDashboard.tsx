@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Product } from '../../types';
+import { Product } from '../types';
 import { 
   forecastDemand, suggestCombos, 
   localForecastDemand, localSuggestCombos,
   DemandForecast, ComboSuggestion 
-} from '../services/inventoryService';
+} from '../src/services/inventoryService';
 import { TrendingUp, Wand2, Database, Zap, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { marketplaceSyncService } from '../../services/marketplaceSyncService';
-import { useAuth } from '../../context/useAuth';
+import { marketplaceSyncService } from '../src/services/marketplaceSyncService';
+import { useAuth } from '../context/useAuth';
 
 interface InventoryDashboardProps {
   products: Product[];
@@ -140,6 +140,7 @@ const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ products, onRef
             </div>
           ))}
         </div>
+
       </div>
     </div>
   );

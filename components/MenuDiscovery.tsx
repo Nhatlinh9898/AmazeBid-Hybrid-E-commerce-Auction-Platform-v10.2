@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, Utensils, ShoppingBag, ChevronRight, ChevronLeft, ChevronDown, Loader2, Coffee, Smartphone, Sparkles, BookOpen, Briefcase, LayoutGrid, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { storeService } from '../services/StoreService';
+import { storeService } from '../src/services/StoreService';
 import { PhysicalStore, StoreMenuItem } from '../types';
 
 const getCategoryIcon = (category: string) => {

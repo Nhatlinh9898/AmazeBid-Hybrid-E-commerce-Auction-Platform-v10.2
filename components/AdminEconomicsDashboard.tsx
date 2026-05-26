@@ -27,7 +27,7 @@ import {
   Pie
 } from 'recharts';
 import { motion } from 'motion/react';
-import { EquityManager } from '../services/dataProcessingService';
+import { EquityManager } from '../src/services/dataProcessingService';
 import { Shareholder } from '../types';
 
 const AdminEconomicsDashboard: React.FC = () => {

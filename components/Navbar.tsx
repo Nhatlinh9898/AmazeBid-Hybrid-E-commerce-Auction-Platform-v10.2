@@ -3,7 +3,7 @@ import React from 'react';
 import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, Sparkles, Zap, BarChart3, Shield, Bot, Camera, Users, Wand2, Mic, Mail, Store as LucideStore, PlusSquare, Utensils, Briefcase, ChevronRight, Building } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { useWorkSession } from '../context/WorkSessionContext';
-import { emailService } from '../services/EmailService';
+import { emailService } from '../src/services/EmailService';
 
 interface NavbarProps {
   cartCount: number;

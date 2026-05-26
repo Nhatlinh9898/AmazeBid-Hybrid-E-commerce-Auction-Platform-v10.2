@@ -1,5 +1,5 @@
 import React from 'react';
-import { api } from '../services/api';
+import { api } from '../src/services/api';
 import { CheckCircle, XCircle, FileText, AlertTriangle, Bot, Loader2 } from 'lucide-react';
 
 const AdminVerification: React.FC = () => {

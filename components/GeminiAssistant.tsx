@@ -2,7 +2,7 @@
 import React from 'react';
 import { X, Send, Bot } from 'lucide-react';
 import { Message, Product } from '../types';
-import { getShoppingAdvice } from '../services/geminiService';
+import { getShoppingAdvice } from '../src/services/geminiService';
 
 interface GeminiAssistantProps {
   products: Product[];

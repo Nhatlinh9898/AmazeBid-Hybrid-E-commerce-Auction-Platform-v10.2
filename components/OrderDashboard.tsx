@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Package, Truck, CheckCircle, AlertTriangle, X, RefreshCw, Box, Gavel, ShoppingBag, Trash2, MapPin, History, ExternalLink, Wand2 } from 'lucide-react';
 import { Product, Order, OrderStatus, ItemType, ShippingInfo } from '../types';
-import { shippingService } from '../services/shippingService';
+import { shippingService } from '../src/services/shippingService';
 import { analyzeOrder } from '../src/services/aiOrderService';
 import { detectFraud } from '../src/services/fraudDetectionService';
 

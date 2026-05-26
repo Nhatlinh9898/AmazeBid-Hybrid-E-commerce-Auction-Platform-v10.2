@@ -1,6 +1,6 @@
 import React from 'react';
 import { Download, ShieldCheck, Search, ArrowDownLeft, ArrowUpRight, Scale, Clock, Info, Database, FileSignature, Cpu, Shield } from 'lucide-react';
-import { ledger } from '../services/TransactionLedger';
+import { ledger } from '../src/services/TransactionLedger';
 import { TransactionRecord } from '../src/types';
 
 const AuditLedgerView: React.FC = () => {

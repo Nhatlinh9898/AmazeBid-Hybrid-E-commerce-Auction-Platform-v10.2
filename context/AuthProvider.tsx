@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import { signInWithPopup, linkWithPopup } from 'firebase/auth';
 import { auth, googleProvider, facebookProvider, githubProvider } from '../firebase';
 import { User, SocialAccount } from '../types';
-import { api } from '../services/api';
+import { api } from '../src/services/api';
 import { AuthContext } from './AuthContext';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

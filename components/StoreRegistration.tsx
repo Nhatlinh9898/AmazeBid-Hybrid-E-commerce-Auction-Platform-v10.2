@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Store as LucideStore, MapPin, Clock, Plus, X, Utensils, ShoppingBag, CheckCircle2, Sparkles, Loader2, Trash2, Laptop, BookOpen, Wrench, Camera } from 'lucide-react';
-import { storeService } from '../services/StoreService';
+import { storeService } from '../src/services/StoreService';
 import { useAuth } from '../context/useAuth';
-import { aiStoreService } from '../services/aiStoreService';
+import { aiStoreService } from '../src/services/aiStoreService';
 import { StoreMenuItem, OrganizationType } from '../types';
 
 interface StoreRegistrationProps {

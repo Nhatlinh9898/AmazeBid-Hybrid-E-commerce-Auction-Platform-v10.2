@@ -5,10 +5,10 @@ import {
   ArrowDownLeft, ChevronRight, Info
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { FinancialEngine } from '../services/dataProcessingService';
-import { api } from '../services/api';
+import { FinancialEngine } from '../src/services/dataProcessingService';
+import { api } from '../src/services/api';
 import { useAuth } from '../context/useAuth';
-import { emailService } from '../services/EmailService';
+import { emailService } from '../src/services/EmailService';
 
 interface UserWalletModalProps {
   isOpen: boolean;

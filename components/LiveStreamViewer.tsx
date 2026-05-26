@@ -2,7 +2,7 @@
 import React from 'react';
 import { X, Heart, Send, Share2, Mic, MicOff, Camera, CameraOff, ShoppingBag, CreditCard, CheckCircle2, TrendingUp, VideoOff, ExternalLink, Layers, ChevronRight, ChevronLeft, Link as LinkIcon, Gavel, Trophy } from 'lucide-react';
 import { LiveStream, Product, ItemType } from '../types';
-import socket from '../services/socket';
+import socket from '../src/services/socket';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface LiveStreamViewerProps {

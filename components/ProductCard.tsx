@@ -4,7 +4,7 @@ import { Star, Clock, Gavel, ShoppingCart, ExternalLink, Link2, Smartphone, Mess
 import { Product, ItemType } from '../types';
 import ARTryOnModal from './ARTryOnModal';
 import { AISalesAssistant } from './AISalesAssistant';
-import { AuctionCore } from '../services/dataProcessingService';
+import { AuctionCore } from '../src/services/dataProcessingService';
 
 interface ProductCardProps {
   product: Product;

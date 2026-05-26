@@ -1,4 +1,4 @@
-import { TransactionRecord, TransactionType, FuturesContract } from '../src/types';
+import { TransactionRecord, TransactionType, FuturesContract } from '../types';
 import { p2p as p2pService } from './p2pService';
 
 export class TransactionLedger {

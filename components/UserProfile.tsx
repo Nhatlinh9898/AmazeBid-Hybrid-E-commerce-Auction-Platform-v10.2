@@ -4,14 +4,14 @@ import { motion } from 'motion/react';
 import { User, CreditCard, ShieldCheck, MapPin, Eye, EyeOff, Edit2, Plus, LogOut, Lock, X, Share2, Copy, Check, Facebook, Instagram, Chrome, Users, Link, Save, Trash2, AlertTriangle, Phone, FileText, ShoppingBag, Gavel, Calendar, Video, Sparkles, Camera, RefreshCw, Zap, TrendingUp, Info, Clock, Landmark, Wallet, CreditCard as CreditCardIcon, Loader2, Monitor, Briefcase } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { useWorkSession } from '../context/WorkSessionContext';
-import { workforceService } from '../services/WorkforceService';
+import { workforceService } from '../src/services/WorkforceService';
 import { PaymentMethod, Product, ContentPost, ItemType, AISubscriptionTier } from '../types';
 import KYCModal from './KYCModal';
 import UserWalletModal from './UserWalletModal';
 import SystemRequirements from './SystemRequirements';
 import ServiceTermsModal from './ServiceTermsModal';
-import { TrustScore } from '../services/dataProcessingService';
-import { api } from '../services/api';
+import { TrustScore } from '../src/services/dataProcessingService';
+import { api } from '../src/services/api';
 
 interface UserProfileProps {
   isOpen: boolean;

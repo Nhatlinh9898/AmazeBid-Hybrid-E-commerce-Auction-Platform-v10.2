@@ -1,5 +1,5 @@
 import { taskRegistry } from "./taskRegistry";
-import { prisma } from "../../services/prisma";
+import { prisma } from "../../src/services/prisma";
 import { validateInput } from "../validators/input/validateInput";
 
 export class AIRouter {

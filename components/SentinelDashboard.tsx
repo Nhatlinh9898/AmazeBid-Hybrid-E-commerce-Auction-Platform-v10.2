@@ -2,7 +2,7 @@
 import React from 'react';
 import { ShieldAlert, ShieldCheck, Activity, Zap, RefreshCw, AlertTriangle, Terminal, Cpu } from 'lucide-react';
 import { motion } from 'motion/react';
-import { sentinel } from '../services/QuantumSentinel';
+import { sentinel } from '../src/services/QuantumSentinel';
 
 const SentinelDashboard: React.FC = () => {
   const [status, setStatus] = React.useState(sentinel.getStatus());

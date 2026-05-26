@@ -1,8 +1,8 @@
 import React from 'react';
-import { edgeAI } from '../services/edgeAIService';
-import { p2p } from '../services/p2pService';
+import { edgeAI } from '../src/services/edgeAIService';
+import { p2p } from '../src/services/p2pService';
 import { Cpu, Zap } from 'lucide-react';
-import { InfrastructureLogic } from '../services/dataProcessingService';
+import { InfrastructureLogic } from '../src/services/dataProcessingService';
 
 /**
  * COMPONENT: AIWorkerManager

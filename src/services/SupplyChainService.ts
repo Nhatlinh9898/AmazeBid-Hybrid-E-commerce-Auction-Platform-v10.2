@@ -1,6 +1,6 @@
 
 import { Supplier, RawMaterial, PurchaseInvoice } from '../../types';
-import { BOMItem, SupplierOption } from '../types';
+import { BOMItem, SupplierOption } from '../../types';
 
 class SupplyChainService {
   private suppliers: Supplier[] = [];

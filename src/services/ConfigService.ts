@@ -1,4 +1,4 @@
-import { GlobalConfig } from '../types';
+import { GlobalConfig } from '../../types';
 
 class ConfigService {
   private config: GlobalConfig = {

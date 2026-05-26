@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Gavel, Clock, History, Trophy, AlertCircle, Sparkles, Loader2, Mail } from 'lucide-react';
 import { Product } from '../types';
-import socket from '../services/socket';
-import { api } from '../services/api';
-import { emailService } from '../services/EmailService';
+import socket from '../src/services/socket';
+import { api } from '../src/services/api';
+import { emailService } from '../src/services/EmailService';
 import { useAuth } from '../context/useAuth';
 
 interface BidModalProps {

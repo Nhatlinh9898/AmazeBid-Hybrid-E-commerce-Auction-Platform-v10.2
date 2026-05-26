@@ -1,4 +1,4 @@
-import { PhysicalStore, OrganizationType, Review } from '../types';
+import { PhysicalStore, OrganizationType, Review } from '../../types';
 
 class StoreService {
   private stores: PhysicalStore[] = [];

@@ -1,8 +1,8 @@
 import React from 'react';
 import { X, Briefcase, User, ChevronRight } from 'lucide-react';
 import { useWorkSession } from '../context/WorkSessionContext';
-import { workforceService } from '../services/WorkforceService';
-import { storeService } from '../services/StoreService';
+import { workforceService } from '../src/services/WorkforceService';
+import { storeService } from '../src/services/StoreService';
 
 interface WorkLoginDialogProps {
   isOpen: boolean;

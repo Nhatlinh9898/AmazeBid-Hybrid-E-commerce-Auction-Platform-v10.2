@@ -1,7 +1,7 @@
 import React from 'react';
 import { MapPin, Star, Clock, ChevronLeft, ShoppingBag, Plus, Minus, QrCode, CreditCard, CheckCircle2, Info, Loader2, X, Utensils, Printer, Store as LucideStore, Sparkles } from 'lucide-react';
 import { PhysicalStore, StoreMenuItem } from '../types';
-import { storeService } from '../services/StoreService';
+import { storeService } from '../src/services/StoreService';
 import RecruitmentModal from './RecruitmentModal';
 import { useAuth } from '../context/useAuth';
 import StoreAIConsultant from './StoreAIConsultant';

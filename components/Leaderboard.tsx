@@ -1,6 +1,6 @@
 import React from 'react';
 import { Trophy, Star, Award, TrendingUp, ShieldCheck } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../src/services/api';
 
 interface LeaderboardUser {
   id: string;

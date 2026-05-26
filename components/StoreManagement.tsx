@@ -1,12 +1,12 @@
 import React from 'react';
 import { X, Plus, Trash2, Edit2, Save, ShoppingBag, Store as LucideStore, Loader2, Image as ImageIcon, Check, AlertCircle, Calculator, ChevronRight, Scale, Globe, Scan, ShoppingCart, CreditCard, User, Briefcase, FileText, CircleDollarSign } from 'lucide-react';
 import { PhysicalStore, StoreMenuItem, RawMaterial, ProductRecipe, ProductIngredient, ItemType, OrderStatus, OrganizationType, JobPosting } from '../types';
-import { storeService } from '../services/StoreService';
+import { storeService } from '../src/services/StoreService';
 import { supplyChainService } from '../src/services/SupplyChainService';
-import { api } from '../services/api';
-import { PricingService } from '../services/pricingService';
+import { api } from '../src/services/api';
+import { PricingService } from '../src/services/pricingService';
 import BarcodeScanner from './BarcodeScanner';
-import { workforceService } from '../services/WorkforceService';
+import { workforceService } from '../src/services/WorkforceService';
 import { StaffPermission } from '../types';
 import RevenueAnalytics from './RevenueAnalytics';
 

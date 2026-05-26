@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Key, AlertTriangle, ExternalLink, CheckCircle2 } from 'lucide-react';
-import { isGeminiConfigured } from '../services/aiConfig';
+import { isGeminiConfigured } from '../src/services/aiConfig';
 
 // Extend Window interface to include aistudio API
 declare global {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, Loader2, Utensils, Coffee, ShoppingBag, Star, MapPin, Plus, Smartphone, Sparkles, BookOpen, Briefcase, LayoutGrid } from 'lucide-react';
-import { storeService } from '../services/StoreService';
+import { storeService } from '../src/services/StoreService';
 import { PhysicalStore, StoreMenuItem } from '../types';
 
 const getCategoryConfig = (category: string) => {

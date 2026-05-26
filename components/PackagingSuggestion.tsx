@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Product } from '../../types';
-import { suggestPackaging, PackagingSuggestion } from '../services/packagingService';
+import { Product } from '../types';
+import { suggestPackaging, PackagingSuggestion } from '../src/services/packagingService';
 import { Wand2, Box } from 'lucide-react';
 
 interface PackagingSuggestionProps {

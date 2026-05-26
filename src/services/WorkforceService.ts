@@ -1,4 +1,4 @@
-import { StaffRole, StaffPermission, StoreStaff, TimeRecord, Review } from '../types';
+import { StaffRole, StaffPermission, StoreStaff, TimeRecord, Review } from '../../types';
 import { storeService } from './StoreService';
 
 class WorkforceService {

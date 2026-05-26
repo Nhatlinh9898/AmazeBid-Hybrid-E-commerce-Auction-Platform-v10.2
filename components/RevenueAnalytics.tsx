@@ -5,7 +5,7 @@ import {
 import { TrendingUp, TrendingDown, AlertCircle, Brain, Calendar, DollarSign, Package, ShoppingBag, Loader2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { PhysicalStore } from '../types';
-import { getGeminiApiKey } from '../services/aiConfig';
+import { getGeminiApiKey } from '../src/services/aiConfig';
 
 interface RevenueAnalyticsProps {
   store: PhysicalStore;

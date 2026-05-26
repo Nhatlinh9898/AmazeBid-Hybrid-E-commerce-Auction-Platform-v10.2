@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Package, DollarSign, TrendingUp, CheckCircle2, ChevronRight, Wand2, RefreshCw, Bot, Share2, Layout } from 'lucide-react';
-import { generatePriceBundles, rewriteWithStyle, BundleSchema, StyleProfile, STYLE_PROFILES } from '../services/aiPromptService';
+import { generatePriceBundles, rewriteWithStyle, BundleSchema, StyleProfile, STYLE_PROFILES } from '../src/services/aiPromptService';
 import { Product } from '../types';
 
 interface SmartComboGeneratorProps {

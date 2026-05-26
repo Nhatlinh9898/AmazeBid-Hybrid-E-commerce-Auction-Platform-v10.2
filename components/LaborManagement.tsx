@@ -6,9 +6,9 @@ import {
   CircleDollarSign, QrCode, MapPin
 } from 'lucide-react';
 import { PhysicalStore, StaffRole, StaffPermission, StoreStaff } from '../types';
-import { storeService } from '../services/StoreService';
-import { workforceService } from '../services/WorkforceService';
-import { HumanResourceManager } from '../services/dataProcessingService';
+import { storeService } from '../src/services/StoreService';
+import { workforceService } from '../src/services/WorkforceService';
+import { HumanResourceManager } from '../src/services/dataProcessingService';
 
 interface LaborManagementProps {
   ownerId: string;

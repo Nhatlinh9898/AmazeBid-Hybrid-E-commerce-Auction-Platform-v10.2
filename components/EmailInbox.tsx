@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Mail, MailOpen, Trash2, X, CheckCircle, ShoppingBag, ShieldCheck, Gavel, Search, Archive, Check } from 'lucide-react';
-import { emailService, EmailTemplate } from '../services/EmailService';
+import { emailService, EmailTemplate } from '../src/services/EmailService';
 
 interface EmailInboxProps {
   isOpen: boolean;

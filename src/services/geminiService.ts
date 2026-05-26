@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
 import { api } from "./api";
-import { Product, OrderStatus } from "../types";
+import { Product, OrderStatus } from '../../types';
 import { getGeminiApiKey } from "./aiConfig";
 
 export const generateSpeech = async (text: string, voiceName: string = 'Kore'): Promise<string | null> => {

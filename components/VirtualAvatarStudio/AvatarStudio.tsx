@@ -4,9 +4,9 @@ import { X, Image as ImageIcon, Music, MessageSquare, Zap, Bot, Radio, Palette, 
 import { MOCK_AVATARS, MOCK_ENVIRONMENTS, MOCK_OUTFITS } from '../../data';
 import { GoogleGenAI, Type } from "@google/genai";
 import { Product, AvatarCustomization, AvatarOutfit, AvatarEnvironment } from '../../types';
-import { generateSpeech } from '../../services/geminiService';
-import { refineAvatarRealism } from '../../services/avatarCreativeService';
-import { processAvatarInteraction } from '../../services/avatarSkillService';
+import { generateSpeech } from '../../src/services/geminiService';
+import { refineAvatarRealism } from '../../src/services/avatarCreativeService';
+import { processAvatarInteraction } from '../../src/services/avatarSkillService';
 
 // --- 3D IMPORTS ---
 import { Canvas, useThree } from '@react-three/fiber';

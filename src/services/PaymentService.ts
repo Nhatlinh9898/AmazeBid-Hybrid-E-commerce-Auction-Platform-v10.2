@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { db } from '../db';
-import { OrderStatus, WalletTransaction, EscrowItem } from '../types';
+import { OrderStatus, WalletTransaction, EscrowItem } from '../../types';
 import { emailService } from './EmailService';
 import SecurityService from './SecurityService';
 import blockchainManager from './BlockchainManager';

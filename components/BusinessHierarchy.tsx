@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Network, Users, ChevronRight, ChevronDown, Plus, Briefcase, Zap, Globe, Shield, MapPin, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { hierarchyService } from '../services/HierarchyService';
-import { workforceService } from '../services/WorkforceService';
+import { hierarchyService } from '../src/services/HierarchyService';
+import { workforceService } from '../src/services/WorkforceService';
 import { Corporation, Branch, StoreStaff, UserZone } from '../types';
 import { useAuth } from '../context/useAuth';
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, DollarSign, TrendingUp, Ban, CheckCircle, Download, RefreshCw, User as UserIcon } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../src/services/api';
 
 interface UserStat {
   id: string;

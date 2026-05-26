@@ -1,7 +1,7 @@
 import React from 'react';
 import { PhysicalStore, StoreStaff } from '../types';
-import { workforceService } from '../services/WorkforceService';
-import { storeService } from '../services/StoreService';
+import { workforceService } from '../src/services/WorkforceService';
+import { storeService } from '../src/services/StoreService';
 import { useAuth } from './useAuth';
 
 interface WorkSession {

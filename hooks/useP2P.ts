@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { p2p } from '../services/p2pService';
+import { p2p } from '../src/services/p2pService';
 
 /**
  * HOOK: useP2P

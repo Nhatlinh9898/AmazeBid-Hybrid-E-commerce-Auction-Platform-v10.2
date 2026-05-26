@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { AvatarCustomization } from "../types";
+import { AvatarCustomization } from '../../types';
 
 export const refineAvatarRealism = async (userPrompt: string, currentCustomization: AvatarCustomization): Promise<{ customization: Partial<AvatarCustomization>, creativeStory: string }> => {
   try {

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Product } from "../types";
+import { Product } from '../../types';
 
 export interface AvatarContext {
     avatarName: string;

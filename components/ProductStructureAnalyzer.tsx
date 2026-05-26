@@ -20,7 +20,7 @@ import {
 import { motion } from 'motion/react';
 import { supplyChainService } from '../src/services/SupplyChainService';
 import { BOMItem } from '../src/types';
-import { geminiService } from '../services/geminiService';
+import { geminiService } from '../src/services/geminiService';
 import ProductEcosystemNetwork from './ProductEcosystemNetwork';
 
 const isDeepMatch = (item: BOMItem, term: string): boolean => {

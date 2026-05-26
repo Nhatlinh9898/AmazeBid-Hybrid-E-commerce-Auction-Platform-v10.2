@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageCircle, Send, Bot, X, Check, RefreshCw } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../src/services/api';
 import { Product } from '../types';
 
 interface AISalesAssistantProps {

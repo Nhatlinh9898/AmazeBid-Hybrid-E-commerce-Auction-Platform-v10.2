@@ -1,4 +1,4 @@
-import { EmailTemplate } from '../types';
+import { EmailTemplate } from '../../types';
 
 // Enhanced Email Service Types
 interface EmailQueueItem {

@@ -1,5 +1,5 @@
-import { Product } from '../types';
-import { localAnalyzeProfit } from '../src/services/inventoryService';
+import { Product } from '../../types';
+import { localAnalyzeProfit } from './inventoryService';
 import { configService } from './ConfigService';
 
 export interface PricingPlan {

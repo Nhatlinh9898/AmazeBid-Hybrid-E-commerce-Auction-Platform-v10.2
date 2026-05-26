@@ -1,5 +1,5 @@
 import React from 'react';
-import { api } from '../services/api';
+import { api } from '../src/services/api';
 import { useAuth } from '../context/useAuth';
 import { 
   Shield, 

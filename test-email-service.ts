@@ -1,5 +1,5 @@
 // Demo sử dụng EmailService - Test các tính năng gửi email thực tế
-import { emailService } from './services/EmailService';
+import { emailService } from './src/services/EmailService';
 
 // Test function để kiểm tra các method của EmailService
 async function testEmailService() {

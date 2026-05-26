@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import { Product, OrderStatus, GlobalConfig, User as UserType, Order } from '../types';
 import { MOCK_ALL_USERS } from '../data';
-import { api } from '../services/api';
-import { OrderLogic } from '../services/dataProcessingService';
+import { api } from '../src/services/api';
+import { OrderLogic } from '../src/services/dataProcessingService';
 
 interface SellerOrderManagementProps {
   products: Product[];

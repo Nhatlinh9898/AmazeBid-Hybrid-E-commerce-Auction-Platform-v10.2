@@ -1,4 +1,4 @@
-import { Corporation, Branch } from '../types';
+import { Corporation, Branch } from '../../types';
 
 class HierarchyService {
   async getCorporations(ownerId?: string): Promise<Corporation[]> {

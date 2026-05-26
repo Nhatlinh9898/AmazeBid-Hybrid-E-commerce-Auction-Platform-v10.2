@@ -1,4 +1,4 @@
-import { ShippingOption, ShippingInfo, TrackingEvent } from '../types';
+import { ShippingOption, ShippingInfo, TrackingEvent } from '../../types';
 
 /**
  * ShippingService simulates integration with real shipping APIs (GHN, GHTK, DHL, etc.)

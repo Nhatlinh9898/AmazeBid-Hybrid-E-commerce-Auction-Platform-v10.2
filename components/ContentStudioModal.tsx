@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { X, PenTool, Image as ImageIcon, Video, Share2, Sparkles, LayoutTemplate, Save, Download, ChevronRight, Wand2, CheckCircle2, ShoppingBag, Plus, RefreshCw, RotateCcw, Tag, Upload, Link2, Database } from 'lucide-react';
-import { generateSEOContent, generateProductImage, generateProductVideo, generateKeywordSuggestions, generateProductTags } from '../services/geminiService';
+import { generateSEOContent, generateProductImage, generateProductVideo, generateKeywordSuggestions, generateProductTags } from '../src/services/geminiService';
 import { ContentPost, Product, KnowledgeItem } from '../types';
 import { KnowledgeBaseManager } from './KnowledgeBaseManager';
 import { useAuth } from '../context/useAuth';
